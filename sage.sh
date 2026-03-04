@@ -1,5 +1,10 @@
 #!/bin/bash -x
 
+# source /Users/nicolas/miniforge3/etc/profile.d/conda.sh &>/dev/null
+# conda activate sage &>/dev/null
+
+export PATH="$PATH:/Users/nicolas/miniforge3/envs/sage/bin/"
+
 clean() {
 	rm -rf "${TEMP}"
 	kill -s TERM "${TOP_PID}"
