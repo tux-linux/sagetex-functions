@@ -1,0 +1,72 @@
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{gensymb}
+\usepackage{tabularx}
+\usepackage{cancel}
+\usepackage{geometry}
+\usepackage{xcolor}
+\setlength{\arrayrulewidth}{0.25mm}
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.25}
+\usepackage[output-decimal-marker={,},exponent-product=\cdot]{siunitx}
+\usepackage{siunitx,upgreek,abbrevs}
+\geometry{margin=0.65in}
+\newcommand{\units}[1]{\text{ #1}}
+\newcommand{\dii}{\mathop{\mathrm{d}\!}}
+\newcommand{\dif}[3][]{\frac{\mathrm{d}^{#1}}{\mathrm{d}#3^{#1}}\left(#2\right)}
+\newcommand{\difs}[3][]{\frac{\mathrm{d}^{#1}#2}{\mathrm{d}#3^{#1}}}
+\newcommand{\pif}[3][]{\frac{\partial^{#1}}{\partial#3^{#1}}\left(#2\right)}
+\newcommand{\pifs}[3][]{\frac{\partial^{#1}#2}{\partial#3^{#1}}}
+\newcommand{\mc}{MTH1102 -- }
+\newcommand{\me}{MTH1115 -- }
+\newcommand{\solution}{\textbf{\underline{\textsc{Solution}}}\\}
+\newcommand{\abs}[1]{\left|#1\right|}
+\newcommand{\prb}[1]{\left(#1\right)}
+\newcommand{\brb}[1]{\left[#1\right]}
+\newcommand{\vnorm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\ssection}[1]{\section*{#1}\vspace{-\baselineskip}}
+\newcommand{\sbsect}[1]{\subsection*{#1}\vspace{-\baselineskip}}
+\newcommand{\ssectionn}[1]{\section{#1}\vspace{-\baselineskip}}
+\newcommand{\sbsectn}[1]{\subsection{#1}\vspace{-\baselineskip}}
+\newcommand{\sln}{\boxed{\textbf{Solution}}\qquad}
+\let\oldforall\forall
+\renewcommand{\forall}{\:\oldforall\:}
+\usepackage{enumitem}
+\usepackage[french]{babel}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{sagetex}
+\usepackage[labelfont=bf,textfont=md]{caption}
+%\usepackage{bm}
+\usepackage{nicematrix}
+\usepackage{makecell}
+\usepackage{pdfpages}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\newcommand{\firstpageheadrule}{\renewcommand{\headrulewidth}{0.4pt}}
+\newcommand{\runningheadrule}{\renewcommand{\headrulewidth}{0.4pt}}
+\newcommand{\firstpagefootrule}{\renewcommand{\footrulewidth}{0.4pt}}
+\newcommand{\runningfootrule}{\renewcommand{\footrulewidth}{0.4pt}}
+\renewcommand{\cellalign}{cc}
+\newcommand{\qtys}[3]{\sagestr{qty(#1,#2,"#3")}}
+\newcommand{\nums}[2]{\sagestr{num(#1,#2)}}
+\newcommand{\datai}[4]{$\nums{#1}{#3}\pm\nums{#2}{#4}$}
+\newcommand{\maxl}[1]{#1_\text{max.}}
+\newcommand{\effl}[1]{#1_\text{eff.}}
+\newcommand{\question}[1]{#1\vspace{0.5em}\hrule\vspace{0.5em}\hspace{-1.525em}\sln}
+\newcommand{\questionenum}[1]{#1\vspace{0.5em}\hrule\vspace{0.5em}\sln}
+\newcommand{\sfig}[2][1]{\begin{figure}[h!]\centering\linespread{1}\scalebox{#1}{#2}\end{figure}}
+\usepackage{circuitikz}
+\usetikzlibrary{babel}
+\usetikzlibrary{arrows.meta}
+\tikzset{>={Latex[width=2.5mm,length=2.5mm]}}
+\linespread{1.2}
+\NiceMatrixOptions{cell-space-top-limit=4pt,cell-space-bottom-limit=2pt}
+
+\makeatletter
+\renewcommand*\env@matrix[1][*\c@MaxMatrixCols c]{%
+	\hskip -\arraycolsep
+	\let\@ifnextchar\new@ifnextchar
+	\array{#1}}
+\makeatother
