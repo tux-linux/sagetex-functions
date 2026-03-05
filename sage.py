@@ -274,16 +274,14 @@ def matdexpr(mat):
     lt = lt[:-2] + r"\end{array}\right)"
     return m, LatexExpr(lt)
 
-def prepare_rref_matrix(LHS, COEFF, RHS, unit=None, precision=None):
-    sys = list(LHS * COEFF - RHS)
+def prepare_rref_matrix(LHS, VAR, RHS, unit=None, precision=None):
+    sys = list(LHS * VAR - RHS)
     CONSTS = matrix(ZZ, 0, 1)
-    COEFFS = matrix(SR, 0, len(LHS[0]))
-    fvars = []
+    fvars = list(VAR.list())
+    COEFFS = matrix(SR, 0, len(fvars))
+
     for expr in sys:
-        fvars_r = expr[0].free_variables()
-        if len(fvars_r) > len(fvars):
-            fvars = fvars_r
-        const = -expr[0].subs({v: 0 for v in fvars_r})
+        const = -expr[0].subs({v: 0 for v in fvars})
         CONSTS = CONSTS.stack(vector([const]))
 
     i = 0
@@ -292,34 +290,51 @@ def prepare_rref_matrix(LHS, COEFF, RHS, unit=None, precision=None):
         COEFFS = COEFFS.stack(jacobian(sys[i][0], fvars))
         i += 1
 
-    AUG = COEFFS.augment(CONSTS, subdivide = True)
+    AUG = COEFFS.augment(CONSTS, subdivide=True)
     RREF = AUG.rref()
-
     lt = latex(AUG) + r"\sim"
     n_fvars = len(fvars)
-    lt += display_rref_matrix(RREF, fvars, unit, precision)
 
-    sol_dict = {fvars[i]: RREF[i, n_fvars] for i in range(len(fvars))}
+    pivot_cols = list(RREF.pivots())
+    sol_dict = {}
+    for col_idx, var in enumerate(fvars):
+        if col_idx in pivot_cols:
+            row_idx = pivot_cols.index(col_idx)
+            sol_dict[var] = RREF[row_idx, n_fvars]
 
+    lt += display_rref_matrix(RREF, fvars, pivot_cols, unit, precision)
     return RREF, lt, sol_dict
 
-def display_rref_matrix(RREF, fvars, unit=None, precision=None):
+
+def display_rref_matrix(RREF, fvars, pivot_cols, unit=None, precision=None):
     n_fvars = len(fvars)
     lt = latex(RREF) + r"\Longrightarrow\begin{cases}"
-    i = 0
-    fvars = sorted(list(fvars), key=str)
-    while i < n_fvars:
-        lt += latex(fvars[i]) + r"="
-        if precision == None:
-            lt += latex(RREF[i][n_fvars])
-        elif isinstance(unit, str) == False:
-            lt += num(RREF[i][n_fvars], precision)
-        else:
-            lt += qty(RREF[i][n_fvars], precision, unit)
-        lt += r"\\"
-        i += 1
-    lt += r"\end{cases}"
 
+    fvars_sorted = sorted(list(fvars), key=str)
+
+    for col_idx, var in enumerate(fvars_sorted):
+        # Find original index (before sorting) to check pivot
+        orig_idx = list(fvars).index(var)
+        if orig_idx in pivot_cols:
+            row_idx = pivot_cols.index(orig_idx)
+            lt += latex(var) + r"="
+            val = RREF[row_idx, n_fvars]
+            if precision is None:
+                lt += latex(val)
+            elif not isinstance(unit, str):
+                lt += num(val, precision)
+            else:
+                lt += qty(val, precision, unit)
+        else:
+            lt += latex(var) + r"\text{\:: variable libre}"
+        lt += r"\\"
+
+    lt += r"\end{cases}"
     return lt
+
+def extract_equations_matrix_product(LHS, VAR, RHS):
+    lhs = list(LHS * VAR)
+    rhs = list(RHS)
+    return [lhs, rhs]
 
 \end{sagesilent}
