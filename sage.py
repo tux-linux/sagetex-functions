@@ -279,56 +279,58 @@ def prepare_rref_matrix(LHS, VAR, RHS, unit=None, precision=None):
     CONSTS = matrix(ZZ, 0, 1)
     fvars = list(VAR.list())
     COEFFS = matrix(SR, 0, len(fvars))
-
     for expr in sys:
         const = -expr[0].subs({v: 0 for v in fvars})
         CONSTS = CONSTS.stack(vector([const]))
-
     i = 0
     while i < len(sys):
         sys[i][0] = sys[i][0] + CONSTS[i][0]
         COEFFS = COEFFS.stack(jacobian(sys[i][0], fvars))
         i += 1
-
     AUG = COEFFS.augment(CONSTS, subdivide=True)
     RREF = AUG.rref()
     lt = latex(AUG) + r"\sim"
     n_fvars = len(fvars)
-
     pivot_cols = list(RREF.pivots())
     sol_dict = {}
     for col_idx, var in enumerate(fvars):
         if col_idx in pivot_cols:
             row_idx = pivot_cols.index(col_idx)
-            sol_dict[var] = RREF[row_idx, n_fvars]
-
+            expr = RREF[row_idx, n_fvars]
+            for free_col, free_var in enumerate(fvars):
+                if free_col not in pivot_cols:
+                    coeff = -RREF[row_idx, free_col]
+                    if coeff != 0:
+                        expr += coeff * free_var
+            sol_dict[var] = expr
     lt += display_rref_matrix(RREF, fvars, pivot_cols, unit, precision)
     return RREF, lt, sol_dict
-
 
 def display_rref_matrix(RREF, fvars, pivot_cols, unit=None, precision=None):
     n_fvars = len(fvars)
     lt = latex(RREF) + r"\Longrightarrow\begin{cases}"
-
     fvars_sorted = sorted(list(fvars), key=str)
-
-    for col_idx, var in enumerate(fvars_sorted):
-        # Find original index (before sorting) to check pivot
+    for var in fvars_sorted:
         orig_idx = list(fvars).index(var)
         if orig_idx in pivot_cols:
             row_idx = pivot_cols.index(orig_idx)
+            rhs = RREF[row_idx, n_fvars]
+            expr = rhs
+            for col_idx, v in enumerate(fvars):
+                if col_idx not in pivot_cols and col_idx != orig_idx:
+                    coeff = -RREF[row_idx, col_idx]
+                    if coeff != 0:
+                        expr += coeff * v
             lt += latex(var) + r"="
-            val = RREF[row_idx, n_fvars]
             if precision is None:
-                lt += latex(val)
+                lt += latex(expr)
             elif not isinstance(unit, str):
-                lt += num(val, precision)
+                lt += num(expr, precision)
             else:
-                lt += qty(val, precision, unit)
+                lt += qty(expr, precision, unit)
         else:
             lt += latex(var) + r"\text{\:: variable libre}"
         lt += r"\\"
-
     lt += r"\end{cases}"
     return lt
 
