@@ -6,29 +6,41 @@ TIMES = "*"
 PLUS = "+"
 POW = "^"
 
-IGNORE_PRECISION_CHECKS = False
+PRECISION_CHECKS = True
+RAT_ANS = True
 
-def ignore_precision_checks():
-    global IGNORE_PRECISION_CHECKS
-    IGNORE_PRECISION_CHECKS = True
+def set_precision_checks(bool):
+    global PRECISION_CHECKS
+    PRECISION_CHECKS = bool
+    return ""
+
+def set_rational_answers(bool):
+    global RAT_ANS
+    RAT_ANS = bool
     return ""
 
 def _latex_or_number(X, precision):
-    if (X.parent() == SR and X.variables()) or (IGNORE_PRECISION_CHECKS == False and X.is_integer() == False and precision == 0) or precision == None:
-        return r"{\color{red}" + latex(X) + "}", True
-    return "{:.{prec}f}".format(X.n(), prec=precision), False
+    if (X.parent() == SR and X.variables()) or (PRECISION_CHECKS == True and X.is_integer() == False and precision == 0) or precision == None:
+        return "", r"{\color{red}" + latex(X) + "}", True
+
+    pre_val = ""
+    if RAT_ANS == True and X.is_integer() == False:
+        pre_val += latex(X) + "="
+    val = "{:.{prec}f}".format(X.n(), prec=precision)
+
+    return pre_val, val, False
 
 def num(X, precision):
-    val, bool = _latex_or_number(X, precision)
+    pre_val, val, bool = _latex_or_number(X, precision)
     if bool:
         return val
-    return r"\num{{{}}}".format(val)
+    return r"{}\num{{{}}}".format(pre_val, val)
 
 def qty(X, precision, unit):
-    val, bool = _latex_or_number(X, precision)
+    pre_val, val, bool = _latex_or_number(X, precision)
     if bool:
         return val
-    return r"\qty{{{}}}{}".format(val, unit)
+    return r"{}\qty{{{}}}{}".format(pre_val, val, unit)
 
 def svar(name, lname=None):
     symbolic_var = var(name, latex_name=lname)
