@@ -32,8 +32,12 @@ killall pdflatex
 
 cp -Lrv "${DIRR}" "${TEMP}"
 pushd "${TEMP}/${DIR}"
-python3 "${SCRIPT_DIR}/tooltip.py" "${TEMP}/${DIR}/${FILE}" "${TEMP}/${DIR}/${FILE}.f"
-mv "${TEMP}/${DIR}/${FILE}.f" "${TEMP}/${DIR}/${FILE}"
+
+if [ -e "${TEMP}/${DIR}/.${FILE}_et" ]; then
+	python3 "${SCRIPT_DIR}/tooltip.py" "${TEMP}/${DIR}/${FILE}" "${TEMP}/${DIR}/${FILE}.f"
+	mv "${TEMP}/${DIR}/${FILE}.f" "${TEMP}/${DIR}/${FILE}"
+fi
+
 pdflatex -halt-on-error "${TEMP}/${DIR}/${FILE}" || clean
 [ -e "${TEMP}/${DIR}/${FILENAME}.sagetex.sage" ] && (sage "${TEMP}/${DIR}/${FILENAME}.sagetex.sage" || clean)
 pdflatex -halt-on-error "${TEMP}/${DIR}/${FILE}" || clean
