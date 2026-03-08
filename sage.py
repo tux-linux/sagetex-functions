@@ -386,5 +386,4 @@ def compute_parallel_resistance(resistors):
         expr = expr.lhs() == expr.rhs() + 1/value
 
     return solve(expr, R)[0].rhs()
-
 \end{sagesilent}

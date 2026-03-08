@@ -10,6 +10,8 @@ clean() {
 	kill -s TERM "${TOP_PID}"
 }
 
+
+SCRIPT_DIR=$(realpath "$(dirname "${BASH_SOURCE[0]}")")
 LATEX_TEMP="/tmp/latex-temp"
 TEMP="$(mktemp -d)"
 DIRR="$(dirname ""${1}"")"
@@ -29,6 +31,7 @@ killall pdflatex
 
 cp -Lrv "${DIRR}" "${TEMP}"
 pushd "${TEMP}/${DIR}"
+python3 "${SCRIPT_DIR}/tooltip.py" "${TEMP}/${DIR}/${FILE}" "${TEMP}/${DIR}/${FILE}"
 pdflatex -halt-on-error "${TEMP}/${DIR}/${FILE}" || clean
 [ -e "${TEMP}/${DIR}/${FILENAME}.sagetex.sage" ] && (sage "${TEMP}/${DIR}/${FILENAME}.sagetex.sage" || clean)
 pdflatex -halt-on-error "${TEMP}/${DIR}/${FILE}" || clean
