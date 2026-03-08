@@ -19,13 +19,36 @@ def set_rational_answers(bool):
     RAT_ANS = bool
     return ""
 
-def _latex_or_number(X, precision):
+def infinite_decimal(x):
+    if x not in QQ:
+        return True
+
+    d = QQ(x).denominator()
+
+    while d % 2 == 0:
+        d //= 2
+    while d % 5 == 0:
+        d //= 5
+
+    return d > 1
+
+def _latex_or_number(X, precision, unit=None):
     if (X.parent() == SR and X.variables()) or (PRECISION_CHECKS == True and X.is_integer() == False and precision == 0) or precision == None:
         return "", r"{\color{red}" + latex(X) + "}", True
 
     pre_val = ""
     if RAT_ANS == True and X.is_integer() == False:
-        pre_val += latex(X) + "="
+        pre_val += r"\left["
+        pre_val += latex(X)
+        pre_val += r"\right]"
+        if isinstance(unit, str):
+            pre_val += r"\:\mathrm{"
+            pre_val += unit
+            pre_val += r"}"
+        if infinite_decimal(X):
+            pre_val += r"\approx"
+        else:
+            pre_val += "="
     val = "{:.{prec}f}".format(X.n(), prec=precision)
 
     return pre_val, val, False
@@ -37,7 +60,7 @@ def num(X, precision):
     return r"{}\num{{{}}}".format(pre_val, val)
 
 def qty(X, precision, unit):
-    pre_val, val, bool = _latex_or_number(X, precision)
+    pre_val, val, bool = _latex_or_number(X, precision, unit)
     if bool:
         return val
     return r"{}\qty{{{}}}{}".format(pre_val, val, unit)
@@ -66,7 +89,12 @@ def _is_symbolic(sage_val):
     return False
 
 def _can_add_parens(lt, pow):
-    return not (lt.startswith(r"\left(")) and (r"\cdot" in lt or (any(c.isalpha() for c in lt)) and not lt.isalpha()) and not lt.startswith(r"\frac{")
+    if lt.startswith(r"\left("):
+        return False
+    # Always wrap sums/differences
+    if '+' in lt or '-' in lt.lstrip('-'):
+        return True
+    return (r"\cdot" in lt or (any(c.isalpha() for c in lt) and not lt.isalpha())) and not lt.startswith(r"\frac{")
 
 # ── parser ─────────────────────────────────────────────────────────────────────
 
@@ -350,5 +378,13 @@ def extract_equations_matrix_product(LHS, VAR, RHS):
     lhs = list(LHS * VAR)
     rhs = list(RHS)
     return [lhs, rhs]
+
+def compute_parallel_resistance(resistors):
+    R = var('R')
+    expr = 1/R == 0
+    for value in resistors:
+        expr = expr.lhs() == expr.rhs() + 1/value
+
+    return solve(expr, R)[0].rhs()
 
 \end{sagesilent}
