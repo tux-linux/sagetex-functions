@@ -19,14 +19,7 @@ def _set_sym_names(d):
     _SYM_NAMES = d
 
 def _id_to_sym(val):
-    # If already a pure symbol, just return it as-is — no lookup needed
-    try:
-        if SR(val).is_symbol():
-            return val
-    except:
-        pass
-
-    # Walk all frames looking for a match
+    # First pass: exact match
     frame = inspect.currentframe()
     while frame is not None:
         for name, entry in _SYM_NAMES.items():
@@ -34,12 +27,29 @@ def _id_to_sym(val):
                 sage_name, latex_name = entry
             else:
                 sage_name, latex_name = entry, None
-            if name in frame.f_locals and frame.f_locals[name] is val:
-                if latex_name:
-                    return SR.var(sage_name, latex_name=latex_name)
-                else:
-                    return SR.var(sage_name)
+            local_val = frame.f_locals.get(name)
+            if local_val is val:
+                return SR.var(sage_name, latex_name=latex_name) if latex_name else SR.var(sage_name)
         frame = frame.f_back
+
+    # Second pass: negation match
+    frame = inspect.currentframe()
+    while frame is not None:
+        for name, entry in _SYM_NAMES.items():
+            if isinstance(entry, tuple):
+                sage_name, latex_name = entry
+            else:
+                sage_name, latex_name = entry, None
+            local_val = frame.f_locals.get(name)
+            if local_val is not None:
+                try:
+                    if local_val == -val:
+                        sym = SR.var(sage_name, latex_name=latex_name) if latex_name else SR.var(sage_name)
+                        return -sym
+                except:
+                    pass
+        frame = frame.f_back
+
     return val
 
 def _symbolify_list(elements):
