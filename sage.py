@@ -160,7 +160,7 @@ def svar(name, lname=None):
 
 # Return parent: return r"\text{{{}}}".format(X.parent()
 
-# ── helpers ────────────────────────────────────────────────────────────────────
+#### HELPERS ####
 
 def _is_op(e):
     return e in (DIV, TIMES, PLUS, POW, MINUS, NEG)
@@ -184,7 +184,7 @@ def _can_add_parens(lt, pow):
         return True
     return (r"\cdot" in lt or (any(c.isalpha() for c in lt) and not lt.isalpha())) and not lt.startswith(r"\frac{")
 
-# ── parser ─────────────────────────────────────────────────────────────────────
+#### PARSER ####
 
 def _parse(elements, default_op=PLUS):
     """
@@ -381,8 +381,6 @@ def _build_fraction(group):
     ns, nl = _build_product(num_parts, force_no_parens=True)
     ds, dl = _build_product(den_parts, force_no_parens=True)
     return ns / ds, r"\frac{%s}{%s}" % (nl, dl)
-
-# ── public API ─────────────────────────────────────────────────────────────────
 
 def _dexpr(lhs, rhs=None):
     """
