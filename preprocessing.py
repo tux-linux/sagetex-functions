@@ -127,6 +127,69 @@ def wrap_with_tooltip(tex_content, definitions):
 
     return result
 
+def extract_dexpr_args(call_text):
+    """
+    From a dexpr/matdexpr call's argument text, extract all identifier names
+    that are not operators or function names.
+    """
+    SKIP = {'DIV', 'TIMES', 'PLUS', 'MINUS', 'POW', 'dexpr', 'matdexpr', 'True', 'False', 'None'}
+    identifiers = re.findall(r'\b([A-Za-z_][A-Za-z0-9_]*)\b', call_text)
+    return [name for name in identifiers if name not in SKIP and not name.startswith('_')]
+
+def extract_full_call(lines, start_lineno):
+    """
+    Extract the full call text starting at start_lineno, handling multi-line calls.
+    Returns (call_text, end_lineno).
+    """
+    call_text = ""
+    for i in range(start_lineno, min(start_lineno + 20, len(lines))):
+        call_text += lines[i]
+        if call_text.count('(') > 0 and call_text.count('(') <= call_text.count(')'):
+            return call_text, i
+    return call_text, start_lineno
+
+def inject_sym_registries(tex_content):
+    """
+    Find all dexpr/matdexpr calls in sagesilent blocks and inject
+    _build_sym_registry({name: name_str, ...}) calls before each one.
+    """
+    lines = tex_content.split('\n')
+    
+    # Find sagesilent block ranges
+    in_sagesilent = False
+    sagesilent_ranges = []
+    start = None
+    for i, line in enumerate(lines):
+        if r'\begin{sagesilent}' in line:
+            in_sagesilent = True
+            start = i
+        elif r'\end{sagesilent}' in line and in_sagesilent:
+            in_sagesilent = False
+            sagesilent_ranges.append((start, i))
+
+    # Find dexpr/matdexpr call lines within sagesilent blocks
+    call_pattern = re.compile(r'\b(dexpr|matdexpr)\s*\(')
+    
+    injections = {}  # lineno -> registry call to insert before
+    
+    for block_start, block_end in sagesilent_ranges:
+        for i in range(block_start, block_end):
+            if call_pattern.search(lines[i]):
+                call_text, end_line = extract_full_call(lines, i)
+                names = extract_dexpr_args(call_text)
+                if names:
+                    # Build registry dict as a string: {'V': 'V', 'R_1': 'R_1', ...}
+                    registry_str = '{' + ', '.join(f'"{n}": "{n}"' for n in names) + '}'
+                    injections[i] = f'_set_sym_names({registry_str})'
+
+    # Inject lines in reverse order to preserve line numbers
+    result_lines = lines[:]
+    for lineno in sorted(injections.keys(), reverse=True):
+        # Match indentation of the call line
+        indent = re.match(r'^(\s*)', result_lines[lineno]).group(1)
+        result_lines.insert(lineno, indent + injections[lineno])
+
+    return '\n'.join(result_lines)
 
 def main():
     if len(sys.argv) < 2:
@@ -155,6 +218,12 @@ def main():
 
     tooltip_count = len(re.findall(r'\\pdftooltip\{\\(?:sage)', result))
     print(f"Added {tooltip_count} \\pdftooltip wrappers.")
+    
+    print("\nInjecting symbolic name registries for dexpr/matdexpr...")
+    result = inject_sym_registries(result)
+    
+    inject_count = len(re.findall(r'_set_sym_names\(', result))
+    print(f"Injected {inject_count} registry calls.")
 
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write(result)

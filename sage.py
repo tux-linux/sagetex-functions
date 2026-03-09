@@ -1,14 +1,70 @@
 \begin{sagesilent}
 import sympy as sp
+import inspect
 
 DIV  = "/"
 TIMES = "*"
 PLUS = "+"
 MINUS = "-"
 POW = "^"
+NEG = "NEG"
 
 PRECISION_CHECKS = True
 RAT_ANS = True
+
+_SYM_NAMES = {}
+
+def _set_sym_names(d):
+    global _SYM_NAMES
+    _SYM_NAMES = d
+
+def _id_to_sym(val):
+    # If already a pure symbol, just return it as-is — no lookup needed
+    try:
+        if SR(val).is_symbol():
+            return val
+    except:
+        pass
+
+    # Walk all frames looking for a match
+    frame = inspect.currentframe()
+    while frame is not None:
+        for name, entry in _SYM_NAMES.items():
+            if isinstance(entry, tuple):
+                sage_name, latex_name = entry
+            else:
+                sage_name, latex_name = entry, None
+            if name in frame.f_locals and frame.f_locals[name] is val:
+                if latex_name:
+                    return SR.var(sage_name, latex_name=latex_name)
+                else:
+                    return SR.var(sage_name)
+        frame = frame.f_back
+    return val
+
+def _symbolify_list(elements):
+    result = []
+    for e in elements:
+        if isinstance(e, list):
+            result.append(_symbolify_list(e))
+        elif _is_op(e):
+            result.append(e)
+        else:
+            result.append(_id_to_sym(e))
+    return result
+
+def dexpr(lhs, rhs=None):
+    if not _SYM_NAMES:
+        return _dexpr(lhs, rhs)
+    sym_lhs = _symbolify_list(lhs)
+    sym_rhs = _symbolify_list(rhs) if rhs is not None else None
+    _, sym_lhs_lat = _parse(sym_lhs, default_op=PLUS)
+    if rhs is None:
+        val, num_lat = _dexpr(lhs)
+        return val, LatexExpr(sym_lhs_lat + '=' + str(num_lat))
+    _, sym_rhs_lat = _parse(sym_rhs, default_op=PLUS)
+    val, num_lat = _dexpr(lhs, rhs)
+    return val, LatexExpr(sym_lhs_lat + '=' + sym_rhs_lat + r"\Longrightarrow " + str(num_lat))
 
 def set_precision_checks(bool):
     global PRECISION_CHECKS
@@ -79,7 +135,7 @@ def svar(name, lname=None):
 # ── helpers ────────────────────────────────────────────────────────────────────
 
 def _is_op(e):
-    return e in (DIV, TIMES, PLUS, POW, MINUS)
+    return e in (DIV, TIMES, PLUS, POW, MINUS, NEG)
 
 def _is_symbolic(sage_val):
     """True if sage_val is a bare symbol or product of symbols (no numeric coeff)."""
@@ -115,18 +171,40 @@ def _parse(elements, default_op=PLUS):
             expanded.append(default_op)
         expanded.append(e)
 
+    # Resolve NEG tokens: NEG x -> (-x, "-latex(x)")
+    resolved = []
+    i = 0
+    while i < len(expanded):
+        e = expanded[i]
+        if e == NEG:
+            i += 1
+            nxt = expanded[i]
+            if isinstance(nxt, list):
+                sv, lt = _parse(nxt, default_op=TIMES)
+            else:
+                sv, lt = nxt, latex(nxt)
+            # Store as a special pre-negated tuple
+            resolved.append(('__neg__', -sv, lt))
+        else:
+            resolved.append(e)
+        i += 1
+
     # Collect terms as (op_before, sage_val, latex_str, is_nested)
     terms, current_op = [], PLUS
-    for e in expanded:
-        if _is_op(e):
+    for e in resolved:
+        if isinstance(e, tuple) and e[0] == '__neg__':
+            _, sv, lt = e
+            terms.append((current_op, sv, r"\left(-%s\right)" % lt, False))
+            current_op = PLUS
+        elif _is_op(e):
             current_op = e
-            continue
-        if isinstance(e, list):
+        elif isinstance(e, list):
             sv, lt = _parse(e, default_op=TIMES)
             terms.append((current_op, sv, lt, True))
+            current_op = PLUS
         else:
             terms.append((current_op, e, latex(e), False))
-        current_op = PLUS  # reset after consuming; explicit op overrides next
+            current_op = PLUS
 
     return _combine(terms)
 
@@ -170,10 +248,12 @@ def _combine(terms):
     final_latex = first_lt
     for sv, (op, lt) in zip(add_sages[1:], add_latexs[1:]):
         if op == MINUS:
-            if lt.lstrip().startswith('-'):
-                final_latex += r"-\left(" + lt + r"\right)"  # -(-9)
+            if lt.startswith(r"-\left("):  # already wrapped by NEG, don't double wrap
+                final_latex += lt
+            elif lt.lstrip().startswith('-'):
+                final_latex += r"-\left(" + lt + r"\right)"
             else:
-                final_latex += '-' + lt  # simple: -0, -9, etc.
+                final_latex += '-' + lt
         else:
             if lt.lstrip().startswith('-'):
                 final_latex += lt
@@ -276,7 +356,7 @@ def _build_fraction(group):
 
 # ── public API ─────────────────────────────────────────────────────────────────
 
-def dexpr(lhs, rhs=None):
+def _dexpr(lhs, rhs=None):
     """
     Build a (Sage expression, LaTeX string) pair.
 

@@ -34,7 +34,7 @@ cp -Lrv "${DIRR}" "${TEMP}"
 pushd "${TEMP}/${DIR}"
 
 if [ -e "${TEMP}/${DIR}/.${FILE}_et" ]; then
-	python3 "${SCRIPT_DIR}/tooltip.py" "${TEMP}/${DIR}/${FILE}" "${TEMP}/${DIR}/${FILE}.f"
+	python3 "${SCRIPT_DIR}/preprocessing.py" "${TEMP}/${DIR}/${FILE}" "${TEMP}/${DIR}/${FILE}.f"
 	mv "${TEMP}/${DIR}/${FILE}.f" "${TEMP}/${DIR}/${FILE}"
 fi
 
