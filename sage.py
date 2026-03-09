@@ -4,6 +4,7 @@ import sympy as sp
 DIV  = "/"
 TIMES = "*"
 PLUS = "+"
+MINUS = "-"
 POW = "^"
 
 PRECISION_CHECKS = True
@@ -45,12 +46,15 @@ def _latex_or_number(X, precision, unit=None):
             pre_val += r"\:\mathrm{"
             pre_val += unit
             pre_val += r"}"
-        if infinite_decimal(X):
+
+        # Check both: is it an infinite decimal, AND does rounding change the value?
+        rounded = RR(("{:.{prec}f}".format(X.n(), prec=precision)))
+        if infinite_decimal(X) or rounded != RR(X):
             pre_val += r"\approx"
         else:
             pre_val += "="
-    val = "{:.{prec}f}".format(X.n(), prec=precision)
 
+    val = "{:.{prec}f}".format(X.n(), prec=precision)
     return pre_val, val, False
 
 def num(X, precision):
@@ -75,7 +79,7 @@ def svar(name, lname=None):
 # ── helpers ────────────────────────────────────────────────────────────────────
 
 def _is_op(e):
-    return e in (DIV, TIMES, PLUS, POW)
+    return e in (DIV, TIMES, PLUS, POW, MINUS)
 
 def _is_symbolic(sage_val):
     """True if sage_val is a bare symbol or product of symbols (no numeric coeff)."""
@@ -134,7 +138,7 @@ def _combine(terms):
     # Group into additive chunks; each chunk is a run of TIMES/DIV/POW factors
     groups, current_group = [], []
     for (op, sv, lt, nested) in terms:
-        if op == PLUS and current_group:
+        if op in (PLUS, MINUS) and current_group:
             groups.append(current_group)
             current_group = []
         current_group.append((op, sv, lt, nested))
@@ -143,28 +147,38 @@ def _combine(terms):
 
     add_sages, add_latexs = [], []
     for group in groups:
+        lead_op = group[0][0]
         is_fraction = any(op == DIV for (op, *_) in group)
         if is_fraction:
             gs, gl = _build_fraction(group)
-            wrap = False  # fractions provide their own visual grouping
+            wrap = False
         else:
             gs, gl = _build_product(group)
-            # Wrap in parens condition
             wrap = (len(groups) > 1) and r"\cdot" in gl and r"\sqrt" not in gl
+
+        if lead_op == MINUS:
+            gs = -gs
 
         add_sages.append(gs)
         if wrap:
-            add_latexs.append(r"\left(%s\right)" % gl)
+            add_latexs.append((lead_op, r"\left(%s\right)" % gl))
         else:
-            add_latexs.append(gl)
+            add_latexs.append((lead_op, gl))
 
     final_sage  = sum(add_sages)
-    final_latex = add_latexs[0]
-    for sv, lt in zip(add_sages[1:], add_latexs[1:]):
-        if lt.lstrip().startswith('-'):
-            final_latex += lt
+    _, first_lt = add_latexs[0]
+    final_latex = first_lt
+    for sv, (op, lt) in zip(add_sages[1:], add_latexs[1:]):
+        if op == MINUS:
+            if lt.lstrip().startswith('-'):
+                final_latex += r"-\left(" + lt + r"\right)"  # -(-9)
+            else:
+                final_latex += '-' + lt  # simple: -0, -9, etc.
         else:
-            final_latex += '+' + lt
+            if lt.lstrip().startswith('-'):
+                final_latex += lt
+            else:
+                final_latex += '+' + lt
 
     return final_sage, final_latex
 
