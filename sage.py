@@ -9,6 +9,8 @@ MINUS = "-"
 POW = "^"
 NEG = "NEG"
 
+NUM_QTY_COLOR = "blue"
+
 PRECISION_CHECKS = True
 RAT_ANS = True
 
@@ -71,10 +73,17 @@ def dexpr(lhs, rhs=None):
     _, sym_lhs_lat = _parse(sym_lhs, default_op=PLUS)
     if rhs is None:
         val, num_lat = _dexpr(lhs)
+        if str(sym_lhs_lat) == str(num_lat):
+            return val, num_lat
         return val, LatexExpr(sym_lhs_lat + '=' + str(num_lat))
     _, sym_rhs_lat = _parse(sym_rhs, default_op=PLUS)
     val, num_lat = _dexpr(lhs, rhs)
-    return val, LatexExpr(sym_lhs_lat + '=' + sym_rhs_lat + r"\Longrightarrow " + str(num_lat))
+    # Extract just the numeric lhs=rhs part for comparison
+    sym_combined = sym_lhs_lat + '=' + sym_rhs_lat
+    _, num_only = _dexpr(lhs, rhs)
+    if str(sym_combined) == str(num_only):
+        return val, num_lat
+    return val, LatexExpr(sym_lhs_lat + '=' + sym_rhs_lat + r'\Longrightarrow ' + str(num_lat))
 
 def set_precision_checks(bool):
     global PRECISION_CHECKS
@@ -123,17 +132,26 @@ def _latex_or_number(X, precision, unit=None):
     val = "{:.{prec}f}".format(X.n(), prec=precision)
     return pre_val, val, False
 
-def num(X, precision):
+def num(X, precision, color=True):
     pre_val, val, bool = _latex_or_number(X, precision)
     if bool:
         return val
-    return r"{}\num{{{}}}".format(pre_val, val)
+    ret = r"{}".format(pre_val)
+    if color:
+        ret += r"\color{{{}}}".format(NUM_QTY_COLOR)
+    ret += r"\num{{{}}}".format(val)
+    return ret
 
-def qty(X, precision, unit):
+def qty(X, precision, unit, color=True):
     pre_val, val, bool = _latex_or_number(X, precision, unit)
     if bool:
         return val
-    return r"{}\qty{{{}}}{}".format(pre_val, val, unit)
+    ret = r"{}".format(pre_val)
+    if color:
+        ret += r"\color{{{}}}".format(NUM_QTY_COLOR)
+    ret += r"\qty{{{}}}".format(val)
+    ret += r"{{{}}}".format(unit)
+    return ret
 
 def svar(name, lname=None):
     symbolic_var = var(name, latex_name=lname)
