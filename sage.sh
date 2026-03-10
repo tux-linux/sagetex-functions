@@ -32,6 +32,8 @@ killall pdflatex
 
 cp -Lrv "${DIRR}" "${TEMP}"
 pushd "${TEMP}/${DIR}"
+latexindent "${TEMP}/${DIR}/${FILE}" > "${TEMP}/${DIR}/${FILE}.indent"
+mv "${TEMP}/${DIR}/${FILE}.indent" "${TEMP}/${DIR}/${FILE}"
 
 if [ -e "${TEMP}/${DIR}/.${FILE}_et" ]; then
 	python3 "${SCRIPT_DIR}/preprocessing.py" "${TEMP}/${DIR}/${FILE}" "${TEMP}/${DIR}/${FILE}.f"

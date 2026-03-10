@@ -58,6 +58,38 @@ def extract_definitions(tex_content):
 
     return definitions
 
+def extract_plain_definitions(tex_content):
+    """
+    Scan sagesilent blocks for plain variable assignments like V_1 = 120.
+    Returns dict: varname -> sorted list of (line_number, definition_string)
+    """
+    definitions = defaultdict(list)
+
+    sagesilent_pattern = re.compile(
+        r'\\begin\{sagesilent\}(.*?)\\end\{sagesilent\}',
+        re.DOTALL
+    )
+
+    for block_match in sagesilent_pattern.finditer(tex_content):
+        block = block_match.group(1)
+        block_start_line = tex_content[:block_match.start()].count('\n')
+
+        for i, line in enumerate(block.split('\n')):
+            stripped = line.strip()
+            if not stripped or stripped.startswith('#'):
+                continue
+            lineno = block_start_line + i
+
+            # Plain assignment: VarName = value (no leading underscore)
+            m = re.match(r'^([A-Za-z][A-Za-z0-9_]*)\s*=\s*(.+)', stripped)
+            if m:
+                varname = m.group(1)
+                definitions[varname].append((lineno, clean_for_tooltip(stripped)))
+
+    for varname in definitions:
+        definitions[varname].sort(key=lambda x: x[0])
+
+    return definitions
 
 def get_definition_at(definitions, varname, usage_lineno):
     """
@@ -87,36 +119,41 @@ def clean_for_tooltip(s):
     s = re.sub(r'\s+', ' ', s)
     return s.strip()
 
-
-def wrap_with_tooltip(tex_content, definitions):
-    """
-    Replace macros referencing _xxx variables with pdftooltip-wrapped versions,
-    using the definition that was most recently assigned BEFORE the usage line.
-    """
+def wrap_with_tooltip(tex_content, definitions, plain_defs):
     lines = tex_content.split('\n')
 
     patterns = [
         (re.compile(r'\\sage\{(_\w+)\}'), 'sage'),
+        (re.compile(r'\\qtys\{([^}]+)\}\{[^}]*\}\{[^}]*\}'), 'qtys'),
+        (re.compile(r'\\nums\{([^}]+)\}\{[^}]*\}'), 'nums'),
     ]
 
     result_lines = []
     for lineno, line in enumerate(lines):
         for compiled, macro_type in patterns:
-            def make_replacer(lineno, definitions):
+            def make_replacer(lineno, definitions, plain_defs, macro_type):
                 def replacer(m):
                     full_match = m.group(0)
-                    varname = m.group(1).lstrip('_')
-                    defn = get_definition_at(definitions, varname, lineno)
+                    raw = m.group(1)
+                    varname = raw.lstrip('_')
+                    if macro_type == 'sage':
+                        defn = get_definition_at(definitions, varname, lineno)
+                    else:
+                        # Extract first identifier from expression like "V_s.subs(R_P = R_F_1)"
+                        import re as _re
+                        first_id = _re.match(r'[A-Za-z_][A-Za-z0-9_]*', varname)
+                        lookup = first_id.group(0) if first_id else varname
+                        defn = get_definition_at(plain_defs, lookup, lineno) or \
+                            get_definition_at(definitions, lookup, lineno)
                     if defn is None:
                         return full_match
                     return r'\pdftooltip{' + full_match + r'}{\detokenize{' + defn + r'}}'
                 return replacer
-            line = compiled.sub(make_replacer(lineno, definitions), line)
-        result_lines.append(line)
+            line = compiled.sub(make_replacer(lineno, definitions, plain_defs, macro_type), line)  # inside for loop
+        result_lines.append(line)  # outside for loop, after all patterns applied
 
     result = '\n'.join(result_lines)
 
-    # Remove accidental double-wrapping, keeping innermost
     double_wrap = re.compile(
         r'\\pdftooltip\{'
         r'(\\pdftooltip\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}\{[^{}]*\})'
@@ -205,6 +242,11 @@ def main():
     print("Scanning for _variable definitions in sagesilent blocks...")
     definitions = extract_definitions(content)
 
+    print("Scanning for plain variable definitions in sagesilent blocks...")
+    plain_defs = extract_plain_definitions(content)
+
+    all_defs = {**plain_defs, **definitions}  # _varname takes priority over plain
+
     total_defs = sum(len(v) for v in definitions.values())
     multi = {k: v for k, v in definitions.items() if len(v) > 1}
     print(f"Found {len(definitions)} unique variables ({total_defs} total definitions).")
@@ -214,14 +256,14 @@ def main():
             print(f"    _{k}: {len(entries)} definitions at lines {[e[0] for e in entries]}")
 
     print("\nWrapping macros with \\pdftooltip...")
-    result = wrap_with_tooltip(content, definitions)
+    result = wrap_with_tooltip(content, definitions, plain_defs)
 
     tooltip_count = len(re.findall(r'\\pdftooltip\{\\(?:sage)', result))
     print(f"Added {tooltip_count} \\pdftooltip wrappers.")
-    
+
     print("\nInjecting symbolic name registries for dexpr/matdexpr...")
     result = inject_sym_registries(result)
-    
+
     inject_count = len(re.findall(r'_set_sym_names\(', result))
     print(f"Injected {inject_count} registry calls.")
 
@@ -229,7 +271,6 @@ def main():
         f.write(result)
 
     print(f"Output written to: {output_file}")
-
 
 if __name__ == '__main__':
     main()
