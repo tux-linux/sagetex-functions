@@ -161,11 +161,13 @@ def wrap_with_tooltip(tex_content, definitions, plain_defs):
     return result
 
 def extract_dexpr_args(call_text):
-    """
-    From a dexpr/matdexpr call's argument text, extract all identifier names
-    that are not operators or function names.
-    """
-    SKIP = {'DIV', 'TIMES', 'PLUS', 'MINUS', 'POW', 'dexpr', 'matdexpr', 'True', 'False', 'None'}
+    SKIP = {
+        'DIV', 'TIMES', 'PLUS', 'MINUS', 'POW', 'NEG',
+        'DIFF', 'PARTIAL', 'DERIV',
+        'dexpr', 'matdexpr', 'True', 'False', 'None',
+        # Sage constants that must never be treated as variable names
+        'e', 'i', 'pi', 'I', 'oo', 'NaN', 'inf',
+    }
     identifiers = re.findall(r'\b([A-Za-z_][A-Za-z0-9_]*)\b', call_text)
     return [name for name in identifiers if name not in SKIP and not name.startswith('_')]
 

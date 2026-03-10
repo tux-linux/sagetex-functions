@@ -1,9 +1,11 @@
 #!/bin/bash -x
 
+source "/Users/${USER}/.bashrc"
+
 # source /Users/nicolas/miniforge3/etc/profile.d/conda.sh &>/dev/null
 # conda activate sage &>/dev/null
 
-export PATH="$PATH:/Users/nicolas/miniforge3/envs/sage/bin/"
+export PATH="$PATH:/Users/${USER}/miniforge3/envs/sage/bin/"
 
 clean() {
 	rm -rf "${TEMP}"
@@ -41,7 +43,14 @@ if [ -e "${TEMP}/${DIR}/.${FILE}_et" ]; then
 fi
 
 pdflatex -halt-on-error "${TEMP}/${DIR}/${FILE}" || clean
+
 [ -e "${TEMP}/${DIR}/${FILENAME}.sagetex.sage" ] && (sage "${TEMP}/${DIR}/${FILENAME}.sagetex.sage" || clean)
+
+if [ -e "${TEMP}/${DIR}/${FILENAME}.sagetex.sout" ]; then
+	python3 "${SCRIPT_DIR}/sagenum.py" "${TEMP}/${DIR}/${FILENAME}.sagetex.sout" > "${TEMP}/${DIR}/${FILENAME}.sagetex.soutf"
+	mv "${TEMP}/${DIR}/${FILENAME}.sagetex.soutf" "${TEMP}/${DIR}/${FILENAME}.sagetex.sout"
+fi
+
 pdflatex -halt-on-error "${TEMP}/${DIR}/${FILE}" || clean
 mkdir -p "${LATEX_TEMP}" && cp "${TEMP}/${DIR}/${FILENAME}.pdf" "${LATEX_TEMP}"
 popd

@@ -8,6 +8,10 @@ PLUS = "+"
 MINUS = "-"
 POW = "^"
 NEG = "NEG"
+DIFF = 'd'
+PARTIAL = 'p'
+def DERIV(dtype, num, den, order=None):
+    return ('__deriv__', dtype, num, den, order)
 
 NUM_QTY_COLOR = "blue"
 
@@ -166,14 +170,18 @@ def _is_op(e):
     return e in (DIV, TIMES, PLUS, POW, MINUS, NEG)
 
 def _is_symbolic(sage_val):
-    """True if sage_val is a bare symbol or product of symbols (no numeric coeff)."""
+    """True if sage_val is a bare symbol, function application, or product of such."""
     if sage_val.parent() != SR:
         return False
     if sage_val.is_symbol():
         return True
+    # Function application like i(t), v_L(t)
     op = sage_val.operator()
-    if op is not None and op.__name__ in ('mul_vararg', 'mul'):
-        return all(o.is_symbol() for o in sage_val.operands())
+    if op is not None and isinstance(op, sage.symbolic.function.SymbolicFunction):
+        return True
+    # Product of symbols/function applications
+    if op is not None and hasattr(op, '__name__') and op.__name__ in ('mul_vararg', 'mul'):
+        return all(_is_symbolic(o) for o in sage_val.operands())
     return False
 
 def _can_add_parens(lt, pow):
@@ -223,6 +231,11 @@ def _parse(elements, default_op=PLUS):
         if isinstance(e, tuple) and e[0] == '__neg__':
             _, sv, lt = e
             terms.append((current_op, sv, r"\left(-%s\right)" % lt, False))
+            current_op = PLUS
+        elif isinstance(e, tuple) and e[0] == '__deriv__':
+            _, dtype, num, den, order = e
+            sv, lt = _deriv_latex(dtype, num, den, order)
+            terms.append((current_op, sv, lt, False))
             current_op = PLUS
         elif _is_op(e):
             current_op = e
@@ -368,6 +381,41 @@ def _build_product(group, force_no_parens=False):
             latex_parts.append(r" \cdot " + lt)
 
     return sage_val, "".join(latex_parts)
+
+def _deriv_latex(dtype, num, den, order=None):
+    if isinstance(num, list):
+        num_sage, num_lt = _parse(num, default_op=TIMES)
+        num_simple = False
+    else:
+        num_sage, num_lt = num, latex(num)
+        num_simple = True
+
+    if isinstance(den, list):
+        _, den_lt = _parse(den, default_op=TIMES)
+        den_lt = r"\left(%s\right)" % den_lt
+    else:
+        den_sage = den
+        den_lt = latex(den)
+
+    # prefix = 'p' if dtype == 'p' else 'd'
+    # cmd = prefix + ('ifs' if num_simple else 'if')
+    # For now, keep it as-is, because Sage always displays numerator outside of fraction
+    cmd = 'pif'
+
+    order_lt = "[%s]" % latex(order) if order is not None else ""
+    lt = r"\%s%s{%s}{%s}" % (cmd, order_lt, num_lt, den_lt)
+
+    # Perform actual differentiation for the sage value
+    n = order if order is not None else 1
+    try:
+        if dtype == 'p':
+            diff_sage = num_sage.diff(den_sage, n)
+        else:
+            diff_sage = num_sage.diff(den_sage, n)
+    except:
+        diff_sage = num_sage  # fallback if differentiation fails
+
+    return diff_sage, lt
 
 def _build_fraction(group):
     """Render a TIMES/DIV/POW group as \\frac{numerator}{denominator}."""
