@@ -123,34 +123,30 @@ def wrap_with_tooltip(tex_content, definitions, plain_defs):
     lines = tex_content.split('\n')
 
     patterns = [
-        (re.compile(r'\\sage\{(_\w+)\}'), 'sage'),
-        (re.compile(r'\\qtys\{([^}]+)\}\{[^}]*\}\{[^}]*\}'), 'qtys'),
+        (re.compile(r'\\sage\{([^}]+)\}'), 'sage'),
+        (re.compile(r'\\sagestr\{([^}]+)\}'), 'sagestr'),
         (re.compile(r'\\nums\{([^}]+)\}\{[^}]*\}'), 'nums'),
+        (re.compile(r'\\qtys\{([^}]+)\}\{[^}]*\}\{[^}]*\}'), 'qtys'),
     ]
 
     result_lines = []
     for lineno, line in enumerate(lines):
         for compiled, macro_type in patterns:
-            def make_replacer(lineno, definitions, plain_defs, macro_type):
+            def make_replacer(lineno, definitions, plain_defs, macro_type, compiled=compiled):
                 def replacer(m):
                     full_match = m.group(0)
                     raw = m.group(1)
                     varname = raw.lstrip('_')
-                    if macro_type == 'sage':
-                        defn = get_definition_at(definitions, varname, lineno)
-                    else:
-                        # Extract first identifier from expression like "V_s.subs(R_P = R_F_1)"
-                        import re as _re
-                        first_id = _re.match(r'[A-Za-z_][A-Za-z0-9_]*', varname)
-                        lookup = first_id.group(0) if first_id else varname
-                        defn = get_definition_at(plain_defs, lookup, lineno) or \
-                            get_definition_at(definitions, lookup, lineno)
+                    first_id = re.match(r'[A-Za-z_][A-Za-z0-9_]*', varname)
+                    lookup = (first_id.group(0) if first_id else varname).lstrip('_')
+                    defn = get_definition_at(definitions, lookup, lineno) or \
+                           get_definition_at(plain_defs, lookup, lineno)
                     if defn is None:
                         return full_match
                     return r'\pdftooltip{' + full_match + r'}{\detokenize{' + defn + r'}}'
                 return replacer
-            line = compiled.sub(make_replacer(lineno, definitions, plain_defs, macro_type), line)  # inside for loop
-        result_lines.append(line)  # outside for loop, after all patterns applied
+            line = compiled.sub(make_replacer(lineno, definitions, plain_defs, macro_type), line)
+        result_lines.append(line)
 
     result = '\n'.join(result_lines)
 
