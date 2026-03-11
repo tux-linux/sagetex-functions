@@ -379,7 +379,7 @@ def _build_product(group, force_no_parens=False):
 
     parts = []
     for (_, sv, lt, nested) in processed:
-        if nested and not force_no_parens and not only_one:
+        if (nested or (sv.parent() == SR and "add" in str(sv.operator()))) and not force_no_parens and not only_one:
             # Add parens if the nested term contains + or - AND isn't already grouped
             if _can_add_parens(lt, False):
                 lt = r"\left(%s\right)" % lt
