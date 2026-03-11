@@ -19,13 +19,17 @@ PRECISION_CHECKS = True
 RAT_ANS = True
 
 _SYM_NAMES = {}
+_SYM_COUNTS = {} # Ajout d'un dictionnaire de quotas
 
-def _set_sym_names(d):
-    global _SYM_NAMES
+def _set_sym_names(d, counts=None):
+    global _SYM_NAMES, _SYM_COUNTS
     _SYM_NAMES = d
+    if counts is None:
+        _SYM_COUNTS = {k: float('inf') for k in d} # Rétrocompatibilité
+    else:
+        _SYM_COUNTS = counts.copy()
 
 def _id_to_sym(val):
-    # First pass: exact match
     frame = inspect.currentframe()
     while frame is not None:
         for name, entry in _SYM_NAMES.items():
@@ -35,10 +39,12 @@ def _id_to_sym(val):
                 sage_name, latex_name = entry, None
             local_val = frame.f_locals.get(name)
             if local_val is val:
-                return SR.var(sage_name, latex_name=latex_name) if latex_name else SR.var(sage_name)
+                # Vérifie si la variable a encore un "droit" d'être remplacée
+                if _SYM_COUNTS.get(name, 0) > 0:
+                    _SYM_COUNTS[name] -= 1
+                    return SR.var(sage_name, latex_name=latex_name) if latex_name else SR.var(sage_name)
         frame = frame.f_back
 
-    # Second pass: negation match — skip plain rationals
     if val in QQ:
         return val
 
@@ -53,8 +59,10 @@ def _id_to_sym(val):
             if local_val is not None:
                 try:
                     if local_val == -val:
-                        sym = SR.var(sage_name, latex_name=latex_name) if latex_name else SR.var(sage_name)
-                        return -sym
+                        if _SYM_COUNTS.get(name, 0) > 0:
+                            _SYM_COUNTS[name] -= 1
+                            sym = SR.var(sage_name, latex_name=latex_name) if latex_name else SR.var(sage_name)
+                            return -sym
                 except:
                     pass
         frame = frame.f_back

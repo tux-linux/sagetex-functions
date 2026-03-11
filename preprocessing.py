@@ -213,9 +213,14 @@ def inject_sym_registries(tex_content):
                 call_text, end_line = extract_full_call(lines, i)
                 names = extract_dexpr_args(call_text)
                 if names:
-                    # Build registry dict as a string: {'V': 'V', 'R_1': 'R_1', ...}
-                    registry_str = '{' + ', '.join(f'"{n}": "{n}"' for n in names) + '}'
-                    injections[i] = f'_set_sym_names({registry_str})'
+                    from collections import Counter
+                    unique_names = set(names)
+                    counts = Counter(names)
+
+                    registry_str = '{' + ', '.join(f'"{n}": "{n}"' for n in unique_names) + '}'
+                    counts_str = '{' + ', '.join(f'"{n}": {c}' for n, c in counts.items()) + '}'
+
+                    injections[i] = f'_set_sym_names({registry_str}, {counts_str})'
 
     # Inject lines in reverse order to preserve line numbers
     result_lines = lines[:]
