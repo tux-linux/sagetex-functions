@@ -38,7 +38,10 @@ def _id_to_sym(val):
                 return SR.var(sage_name, latex_name=latex_name) if latex_name else SR.var(sage_name)
         frame = frame.f_back
 
-    # Second pass: negation match
+    # Second pass: negation match — skip plain rationals
+    if val in QQ:
+        return val
+
     frame = inspect.currentframe()
     while frame is not None:
         for name, entry in _SYM_NAMES.items():
