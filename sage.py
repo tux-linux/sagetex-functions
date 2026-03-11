@@ -566,45 +566,4 @@ def compute_parallel_resistance(resistors):
         expr = expr.lhs() == expr.rhs() + 1/value
 
     return solve(expr, R)[0].rhs()
-
-def extract_parameters_Y_s_p(V):
-    t = var('t')
-    resultats_Y = []
-    resultats_s_p = []
-
-    # On vérifie si V est une somme.
-    # Si operator(V) est l'addition, on prend les opérandes, sinon on met V dans une liste.
-    if hasattr(V, 'operator') and V.operator() is not None and "add" in str(V.operator()):
-        termes = V.operands()
-    else:
-        termes = [V]
-
-    for terme in termes:
-        partie_exp = None
-
-        # 1. On cherche si le terme contient une exponentielle
-        # On regarde le terme lui-même et ses sous-parties
-        if "exp" in str(terme.operator()):
-            partie_exp = terme
-        else:
-            for op in terme.operands():
-                if "exp" in str(op.operator()):
-                    partie_exp = op
-                    break
-
-        # 2. Extraction des valeurs
-        if partie_exp is not None:
-            # s_p est l'argument de l'exp (1er opérande) divisé par t
-            s_p = partie_exp.operands()[0] / t
-            # Y est le terme total divisé par l'exponentielle
-            Y = terme / partie_exp
-
-            resultats_Y.append(Y)
-            resultats_s_p.append(s_p)
-        else:
-            # Si aucune exp n'est trouvée (cas du 6 par exemple)
-            resultats_Y.append(terme)
-            resultats_s_p.append(0)
-
-    return resultats_Y, resultats_s_p
 \end{sagesilent}
