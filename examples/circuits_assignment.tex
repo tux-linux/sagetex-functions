@@ -1,0 +1,2253 @@
+\documentclass[12pt,titlepage]{article}
+\input{_preamble.tex}
+
+\newcommand{\sens}[2]{(\text{sens #1}\rightarrow\text{#2})}
+
+%g,_g=dexpr([4,TIMES,4,2,[3,34],POW,1/2,4,DIV,[6,7],POW,3,1,DIV,4,7*x,POW,22,5,POW,2,[4,3,4,DIV,[[4,DIV,4],DIV,[5,9]]],x,POW,67])
+%h,_h=dexpr([[4,4,PLUS,4],POW,1/2])
+
+\usepackage{newtx}
+
+\author{Nicolas Mailloux}
+\title{ELE1600A -- Devoir 1}
+\begin{document}
+\input{sage.texinput}
+\input{sage_functions.tex}
+\maketitle
+\section*{Question 1}
+\begin{sagesilent}
+	V=var('V')
+	R=var('R')
+	I=V/R
+
+	V_ind = svar('V_ind', r"V_\text{ind.}")
+	V_ind = 4
+
+	I_ind_CH = svar('I_ind_CH', r"I_{\text{ind.}_{CH}}")
+	I_ind_CH = 3
+
+	I_ind_GF = svar('I_ind_GF', r"I_{\text{ind.}_{GF}}")
+	I_ind_GF = 8
+
+	R_1 = 1
+	R_2 = 2
+
+	# I_x
+	I_x = var('I_x')
+	V_x = var('V_x')
+	V_y = var('V_y')
+	I_HE = 2*I_x
+	I_EF, _I_EF = dexpr([V_x,DIV,R_1])
+	I_y = var('I_y')
+	I_AB = var('I_AB')
+	I_CD = var('I_CD')
+	I_HG = var('I_HG')
+	I_DE = var('I_DE')
+	I_GF = var('I_GF')
+
+	LKC_H, _LKC_H = dexpr([I_HE,I_ind_CH],[I_HG]) # G -> H
+	LKC_F, _LKC_F = dexpr([I_EF,I_GF],[I_ind_GF]) # G -> F
+	LKC_G, _LKC_G = dexpr([I_ind_GF],[I_HG,I_GF])
+	I_GF_HG, _I_GF_HG = dexpr([I_GF],[solve(LKC_G,I_GF)[0].rhs()])
+	LKC_F_I_HG_p, _LKC_F_I_HG_p = dexpr([LKC_F.subs(I_GF=I_GF_HG.rhs())])
+
+	I_HG_V_x = solve(LKC_H,I_HG)[0].rhs()
+	I_GF_V_x = solve(LKC_F,I_GF)[0].rhs()
+	V_x, _V_x = dexpr([solve(LKC_G.subs(I_HG=I_HG_V_x,I_GF=I_GF_V_x),V_x)[0].rhs()])
+
+	LKC_F_I_HG, _LKC_F_I_HG = dexpr([LKC_F_I_HG_p.subs(V_x=V_x)])
+
+	I_HG_I_x, _I_HG_I_x = dexpr([solve(LKC_F_I_HG,I_HG)[0]])
+
+	LKC_C, _LKC_C = dexpr([I_ind_CH,I_y],[I_CD])
+	I_CD_LKC_C = solve(LKC_C,I_CD)[0].rhs()
+	LKT_S_CD, _LKT_S_CD = dexpr([V_ind,[-R_2,I_y],[-R_2,I_CD]],[0])
+	I_CD_LKT_S_CD = solve(LKT_S_CD,I_CD)[0].rhs()
+
+	I_y = solve(I_CD_LKC_C == I_CD_LKT_S_CD, I_y)[0].rhs()
+
+	LKT_AB, _LKT_AB = dexpr([4,[-R_1,I_AB]],[0])
+	I_AB = solve(LKT_AB, I_AB)[0].rhs()
+	LKC_A, _LKC_A = dexpr([I_x],[I_AB,I_y])
+
+	I_x = LKC_A.rhs()
+	V_x = V_x.subs(I_x=I_x)
+
+	I_GF = I_GF_V_x.subs(V_x=V_x)
+	I_HE = I_HE.subs(I_x=I_x)
+	I_HG = I_HG_V_x.subs(V_x=V_x, I_x=I_x)
+	LKT_FGHE, _LKT_FGHE = dexpr([[R_1,I_GF],[-R_1,I_HG],-V_y,[-R_1,I_HE],V_x],[0])
+	V_y = solve(LKT_FGHE, V_y)[0].rhs()
+
+	V_GF, _V_GF = dexpr([[R_1,I_GF]])
+	P_source, _P_source = dexpr([[V_GF,I_GF]])
+\end{sagesilent}
+\question{Pour le circuit présenté ci-dessous, calculez les valeurs des tensions $V_x$ et $V_y$ ainsi que celles des courants $I_x$ et $I_y$. Les valeurs de toutes les résistances sont en ohms. On vous suggère d'utiliser les lois d'Ohm et de Kirchhoff. On vous demande aussi de calculer la puissance mise en jeu dans la source de courant de \qty{8}{A} et de dire si elle fournit ou reçoit de l'énergie.
+	\begin{figure}[h!]
+		\centering
+		\linespread{1}
+		\scalebox{0.8}{\begin{tikzpicture}[thick]
+				% Paths, nodes and wires:
+				\draw (10, 1) -- (1, 1);
+				\draw (9, 3) -| (9, 1);
+				\draw (9, 3) to[american resistor, l={$2$}] (9, 5);
+				\draw (1, 1) -| (1, 2);
+				\draw (1, 6) to[american voltage source, mirror, l={$\text{4 V}$}] (1, 2);
+				\draw (4, 7) to[american resistor, l={$1$}] (4, 1);
+				\draw (1, 6) -| (1, 7);
+				\draw (1, 7) -- (5, 7);
+				\draw (4, 7) to[american resistor, l={$2$}] (9, 7);
+				\draw (9, 7) -| (9, 5);
+				\draw (14, 7) to[american current source, l={$\text{3 A}$}] (9, 7);
+				\draw (14, 7) to[american controlled current source, l={$2I_x$}] (14, 4);
+				\draw (14, 4) to[american resistor, l={$1$}] (14, 1);
+				\draw (14, 1) to[american resistor, l={$1$}] (9, 1);
+				\draw (14, 7) to[american resistor, l={$1$}] (19, 7);
+				\draw (19, 7) to[american resistor, l={$1$}] (19, 1);
+				\draw (19, 1) to[american resistor, l={$1$}] (14, 1);
+				\draw (19, 7) -- (22, 7);
+				\draw (22, 1) to[american current source, l={$\text{8 A}$}] (22, 7);
+				\draw (19, 1) -- (22, 1);
+				\draw[-latex] (1.5, 7.5) -- (3.5, 7.5);
+				\node[shape=rectangle, minimum width=0.715cm, minimum height=0.715cm] at (2.5, 7.875){} node[anchor=north west, align=left, text width=0.327cm, inner sep=6pt] at (2.125, 8.25){$I_x$};
+				\draw[-latex] (5.5, 7.875) -- (7.5, 7.875);
+				\node[shape=rectangle, minimum width=0.715cm, minimum height=0.715cm] at (6.5, 8.25){} node[anchor=north west, align=left, text width=0.327cm, inner sep=6pt] at (6.125, 8.625){$I_y$};
+				\node[shape=rectangle, minimum width=0.625cm, minimum height=1.625cm] at (13.062, 5.5){} node[anchor=north west, align=left, text width=0.272cm, inner sep=5pt] at (12.75, 6.313){+ $V_y$ $-$};
+				\node[shape=rectangle, minimum width=1.75cm, minimum height=0.625cm] at (16.5, 1.688){} node[anchor=north, align=center, text width=1.397cm, inner sep=5pt] at (16.5, 2){$-$ $V_x$ $+$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N1) at (4, 7){} node[anchor=south] at ([yshift=0.15cm]N1.text){$\text{A}$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N2) at (9, 7){} node[anchor=south] at ([yshift=0.15cm]N2.text){$\text{C}$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N3) at (4, 1){} node[anchor=north] at ([yshift=-0.15cm]N3.text){$\text{B}$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N4) at (9, 1){} node[anchor=north] at ([yshift=-0.15cm]N4.text){$\text{D}$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N5) at (14, 1){} node[anchor=north] at ([yshift=-0.15cm]N5.text){$\text{E}$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N6) at (14, 7){} node[anchor=south] at ([yshift=0.15cm]N6.text){$\text{H}$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N7) at (19, 7){} node[anchor=south] at ([yshift=0.15cm]N7.text){$\text{G}$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N8) at (19, 1){} node[anchor=north] at ([yshift=-0.15cm]N8.text){$\text{F}$};
+			\end{tikzpicture}}
+		\caption{Circuit à résistances.}
+	\end{figure}} On fait les calculs nécessaires pour chacune des données demandées:
+\begin{enumerate}
+	\item Calcul de $I_x$:
+	      \begin{itemize}
+		      \item LKC au nœud H:
+		            \begin{gather*}
+			            \sage{_LKC_H}
+		            \end{gather*}
+		      \item LKC au nœud F:
+		            \begin{gather*}
+			            \sage{_LKC_F}
+		            \end{gather*}
+		      \item LKC au nœud G:
+		            \begin{gather*}
+			            \sage{_LKC_G}
+		            \end{gather*}
+		      \item Pour trouver $V_x$, on met en relation les équations ci-haut:
+		            \begin{itemize}
+			            \item $I_{HG}$:
+			                  \begin{gather*}
+				                  I_{HG}=\sage{I_HG_V_x}
+			                  \end{gather*}
+			            \item $I_{GF}$:
+			                  \begin{gather*}
+				                  I_{GF}=\sage{I_GF_V_x}
+			                  \end{gather*}
+			            \item $V_x$:
+			                  \begin{gather*}
+				                  \sage{_LKC_G}\Longrightarrow V_x=\sage{_V_x}
+			                  \end{gather*}
+		            \end{itemize}
+		      \item LKC au nœud C:
+		            \begin{gather*}
+			            \sage{_LKC_C}\Longrightarrow I_{CD}=\sage{I_CD_LKC_C}
+		            \end{gather*}
+		      \item LKT pour la maille allant de la source de tension de \qtys{V_ind}{0}{V} aux nœuds C et D:
+		            \begin{gather*}
+			            \sage{_LKT_S_CD}\Longrightarrow I_{CD}=\sage{I_CD_LKT_S_CD}
+		            \end{gather*}
+		      \item Mise en relation des deux équations pour trouver $I_y$:
+		            \begin{gather*}
+			            I_y=\qtys{I_y}{2}{A}
+		            \end{gather*}
+		      \item LKT entre la source de gauche et les nœuds A et B:
+		            \begin{gather*}
+			            \sage{_LKT_AB}\Longrightarrow I_{AB}=\qtys{I_AB}{0}{A}
+		            \end{gather*}
+		      \item LKC au nœud A:
+		            \begin{gather*}
+			            \sage{_LKC_A}\Longrightarrow\boxed{I_x=\qtys{LKC_A.rhs()}{2}{A}}
+		            \end{gather*}
+	      \end{itemize}
+	\item Calcul de $V_x$:
+	      \begin{gather*}
+		      \boxed{V_x=\sage{_V_x}=\qtys{V_x}{0}{V}}
+	      \end{gather*}
+	\item Calcul de $I_y$:
+	      \begin{gather*}
+		      \boxed{I_y=\qtys{I_y}{2}{A}}\quad\text{(Trouvé plus haut.)}
+	      \end{gather*}
+	\item Calcul de $V_y$:
+	      \begin{gather*}
+		      \sage{_LKT_FGHE}\Longrightarrow\boxed{V_y=\qtys{V_y}{0}{V}}
+	      \end{gather*}
+	\item Calcul de la puissance:
+	      \begin{itemize}
+		      \item Puisque la source de \qtys{I_ind_GF}{0}{A} est branchée en parallèle avec la résistance juste à sa gauche, la tension aux bornes de la résistance est égale à la tension aux bornes de cette source:
+		            \begin{gather*}
+			            V_{GF}=\sage{_V_GF}=\qtys{V_GF}{0}{V}\\
+			            P=VI\Longrightarrow\boxed{P_\text{source}=\sage{_P_source}=\qtys{P_source}{0}{W}>0\Longrightarrow\text{La source reçoit de l'énergie.}}
+		            \end{gather*}
+	      \end{itemize}
+\end{enumerate}
+\newpage
+\section*{Question 2}
+\question{Pour le circuit ci-dessous, calculez les valeurs de la tension $V_x$ et du courant $I_x$ en utilisant deux approches: la méthode des mailles et la méthode des nœuds. Les valeurs de toutes les résistances sont en ohms.
+	\begin{figure}[h!]
+		\centering
+		\linespread{1}
+		\scalebox{0.8}{\begin{tikzpicture}[thick]
+				% Paths, nodes and wires:
+				\draw (1, 1) to[american current source, mirror, l={$\text{3 A}$}] (1, 7);
+				\draw (1, 7) -- (6, 7);
+				\draw (1, 1) -- (6, 1);
+				\draw (6, 7) to[american resistor, l={$1$}] (6, 1);
+				\draw (6, 10) -| (6, 7);
+				\draw (6, 10) to[american controlled current source, l={$2I_x$}] (10, 10);
+				\draw (10, 10) -- (10, 7);
+				\draw (6, 7) to[american resistor, l={$1$}] (10, 7);
+				\draw (10, 7) -- (13, 7);
+				\draw (13, 7) to[american resistor, l={$1$}] (13, 4);
+				\draw (13, 4) to[american controlled voltage source, l={$4V_x$}] (13, 1);
+				\draw (6, 1) -- (19, 1);
+				\draw (19, 1) to[american resistor, l={$1$}] (19, 7);
+				\draw (19, 7) to[american resistor, l={$1$}] (13, 7);
+				\draw (19, 7) -- (22, 7);
+				\draw (22, 7) to[american voltage source, l={$\text{5 V}$}] (22, 1);
+				\draw (22, 1) |- (19, 1);
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.486cm](N1) at (6, 7){} node[anchor=south east] at ([xshift=-0.16cm, yshift=0.16cm]N1.text){$\text{A}$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.486cm](N2) at (10, 7){} node[anchor=south west] at ([xshift=0.16cm, yshift=0.16cm]N2.text){$\text{B}$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.486cm](N3) at (13, 7){} node[anchor=south] at ([yshift=0.06cm]N3.north){$\text{C}$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.486cm](N4) at (19, 7){} node[anchor=south] at ([yshift=0.06cm]N4.north){$\text{D}$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.486cm](N5) at (13, 1){} node[anchor=north] at ([yshift=-0.06cm]N5.south){$\text{F}$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.486cm](N6) at (19, 1){} node[anchor=north] at ([yshift=-0.06cm]N6.south){$\text{E}$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.486cm](N7) at (6, 1){} node[anchor=north] at ([yshift=-0.06cm]N7.south){$\text{G}$};
+				\draw[-latex] (15.5, 7.5) -- (13.5, 7.5);
+				\node[shape=rectangle, minimum width=0.715cm, minimum height=0.715cm] at (14.5, 7.875){} node[anchor=north, align=center, text width=0.327cm, inner sep=6pt] at (14.5, 8.25){$I_x$};
+				\node[shape=rectangle, minimum width=0.715cm, minimum height=1.59cm] at (5.375, 3.938){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (5.375, 3.938){+ $V_x$ $-$};
+			\end{tikzpicture}
+		}
+		\caption{Circuit résistif avec sources indépendantes et dépendantes.}
+	\end{figure}}
+\begin{enumerate}
+	\begin{sagesilent}
+		I_x=var('I_x')
+		V_x=var('V_x')
+		I_x_AB=2*I_x
+		V_x_FC=4*V_x
+
+		I_ind_GA = svar('I_ind_GA', r"I_{\text{ind.}_{GA}}")
+		I_ind_GA=3
+
+		V_ind_DE = svar('V_ind_DE', r"V_{\text{ind.}_{DE}}")
+		V_ind_DE=5
+
+		I_ind_DE=V_ind_DE
+		R_1=1
+		R_2=2
+
+		## Nœuds
+		V_1 = var('V_1')
+		V_2 = var('V_2')
+
+		G_11, _G_11 = _dexpr([1,DIV,R_1,1,DIV,R_1])
+		G_12, _G_12 = _dexpr([-1,DIV,R_1])
+		G_21, _G_21 = _dexpr([-1,DIV,R_1])
+		G_22, _G_22 = _dexpr([1,DIV,1,1,DIV,1,1,DIV,1])
+		G, _G = matdexpr([[[G_11,_G_11],[G_12,_G_12]],[[G_21,_G_21],[G_22,_G_22]]])
+		V = matrix([[V_1],[V_2]])
+		I_R = matrix([[I_ind_GA-I_x_AB],[I_x_AB+V_x_FC+I_ind_DE]])
+
+		I_x, _I_x = dexpr([[V_x],DIV,R_1])
+		V_x = V_1
+		I_x = I_x.subs(V_x=V_x)
+		I = I_R.subs(V_x=V_x, I_x=I_x)
+
+		V_rref, _V_rref, sol_V = prepare_rref_matrix(G, V, I)
+		V_1 = sol_V[V_1]
+	\end{sagesilent}
+	\item Méthode des nœuds:
+	      \begin{itemize}
+		      \item On transforme la source de tension dépendante en une source de courant. De plus, puisque la résistance la plus à droite dans le schéma de la figure ci-haut était en parallèle avec une source de tension idéale, il est possible de l'ignorer:
+		            \sfig[0.69]{\begin{tikzpicture}[thick]
+				            % Paths, nodes and wires:
+				            \node[shape=rectangle, draw, dash pattern={on 1.6pt off 1.6pt}, minimum width=21.986cm, minimum height=2.736cm] at (11.5, 1.375){};
+				            \node[shape=rectangle, draw, dash pattern={on 1.6pt off 1.6pt}, minimum width=7.236cm, minimum height=2.861cm] at (12.875, 6.938){};
+				            \draw (13, 1) to[american controlled current source, l={$4V_x$}] (13, 7);
+				            \draw (1, 1) to[american current source, mirror, l={$\text{3 A}$}] (1, 7);
+				            \draw (1, 7) -- (6, 7);
+				            \draw (1, 1) -- (6, 1);
+				            \draw (6, 7) to[american resistor, l={$1$}] (6, 1);
+				            \draw (6, 10) -| (6, 7);
+				            \draw (6, 10) to[american controlled current source, l={$2I_x$}] (10, 10);
+				            \draw (10, 10) -- (10, 7);
+				            \draw (6, 7) to[american resistor, l={$1$}] (10, 7);
+				            \draw (10, 7) -- (13, 7);
+				            \draw (6, 1) -- (19, 1);
+				            \draw (22, 7) to[american resistor, l={$1$}] (13, 7);
+				            \draw (22, 7) to[american voltage source, l={$\text{5 V}$}] (22, 1);
+				            \draw (22, 1) |- (19, 1);
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.486cm](N1) at (6, 7){} node[anchor=south east] at ([xshift=-0.16cm, yshift=0.16cm]N1.text){$\text{A}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.486cm](N2) at (10, 7){} node[anchor=south west] at ([xshift=0.16cm, yshift=0.16cm]N2.text){$\text{B}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.486cm](N3) at (13, 7){} node[anchor=south] at ([yshift=0.06cm]N3.north){$\text{C}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.486cm](N4) at (13, 1){} node[anchor=north] at ([yshift=-0.06cm]N4.south){$\text{F}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.486cm](N5) at (6, 1){} node[anchor=north] at ([yshift=-0.06cm]N5.south){$\text{G}$};
+				            \draw[-latex] (20.75, 7.5) -- (18.75, 7.5);
+				            \node[shape=rectangle, minimum width=0.715cm, minimum height=0.715cm] at (19.75, 7.875){} node[anchor=north, align=center, text width=0.327cm, inner sep=6pt] at (19.75, 8.25){$I_x$};
+				            \node[shape=rectangle, minimum width=0.715cm, minimum height=1.59cm] at (5.375, 3.938){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (5.375, 3.938){+ $V_x$ $-$};
+				            \draw (15, 6) to[american resistor, l={$1$}] (15, 2);
+				            \draw (13, 6) -- (15, 6);
+				            \draw (13, 2) -- (15, 2);
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.486cm](N6) at (13, 6){} node[anchor=south west] at ([xshift=0.16cm, yshift=0.16cm]N6.text){$\text{H}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.486cm](N7) at (13, 2){} node[anchor=south west] at ([xshift=0.16cm, yshift=0.16cm]N7.text){$\text{I}$};
+				            \node[ground] at (22, 1){};
+				            \node[shape=rectangle, minimum width=1.715cm, minimum height=1.215cm] at (23.375, 0.875){} node[anchor=north west, align=left, text width=1.327cm, inner sep=6pt] at (22.5, 1.5){Référence (0 V)};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.486cm](N8) at (22, 1){} node[anchor=south east] at (N8.north west){$\text{I}$};
+				            \node[shape=rectangle, draw, dash pattern={on 1.6pt off 1.6pt}, minimum width=5.736cm, minimum height=2.486cm] at (3.625, 7){};
+				            \node[shape=rectangle, minimum width=0.715cm, minimum height=0.715cm] at (1.125, 7.875){} node[anchor=west, align=left, text width=0.327cm, inner sep=6pt] at (0.75, 7.875){$V_1$};
+				            \node[shape=rectangle, minimum width=0.715cm, minimum height=0.715cm] at (9.625, 8){} node[anchor=west, align=left, text width=0.327cm, inner sep=6pt] at (9.25, 8){$V_2$};
+			            \end{tikzpicture}}
+		      \item On peut simplifier encore plus le circuit en transformant la source de tension indépendante en source de courant indépendante:
+		            \sfig[.69]{\begin{tikzpicture}[thick]
+				            % Paths, nodes and wires:
+				            \draw (22, 1) to[american current source, l={$\text{5 A}$}] (22, 7);
+				            \draw (22, 7) |- (13, 7);
+				            \node[shape=rectangle, draw, dash pattern={on 1.6pt off 1.6pt}, minimum width=21.986cm, minimum height=2.736cm] at (11.5, 1.375){};
+				            \node[shape=rectangle, draw, dash pattern={on 1.6pt off 1.6pt}, minimum width=12.986cm, minimum height=2.861cm] at (15.75, 6.938){};
+				            \draw (13, 1) to[american controlled current source, l={$4V_x$}] (13, 7);
+				            \draw (1, 1) to[american current source, mirror, l={$\text{3 A}$}] (1, 7);
+				            \draw (1, 7) -- (6, 7);
+				            \draw (1, 1) -- (6, 1);
+				            \draw (6, 7) to[american resistor, l={$1$}] (6, 1);
+				            \draw (6, 10) -| (6, 7);
+				            \draw (6, 10) to[american controlled current source, l={$2I_x$}] (10, 10);
+				            \draw (10, 10) -- (10, 7);
+				            \draw (6, 7) to[american resistor, l={$1$}] (10, 7);
+				            \draw (10, 7) -- (13, 7);
+				            \draw (6, 1) -- (19, 1);
+				            \draw (19, 7) to[american resistor, l={$1$}] (19, 1);
+				            \draw (22, 1) |- (19, 1);
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.486cm](N1) at (6, 7){} node[anchor=south east] at ([xshift=-0.16cm, yshift=0.16cm]N1.text){$\text{A}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.486cm](N2) at (10, 7){} node[anchor=south west] at ([xshift=0.16cm, yshift=0.16cm]N2.text){$\text{B}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.486cm](N3) at (13, 7){} node[anchor=south] at ([yshift=0.06cm]N3.north){$\text{C}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.486cm](N4) at (13, 1){} node[anchor=north] at ([yshift=-0.06cm]N4.south){$\text{F}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.486cm](N5) at (6, 1){} node[anchor=north] at ([yshift=-0.06cm]N5.south){$\text{G}$};
+				            \node[shape=rectangle, minimum width=0.715cm, minimum height=1.59cm] at (5.375, 3.938){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (5.375, 3.938){+ $V_x$ $-$};
+				            \draw (15, 6) to[american resistor, l={$1$}] (15, 2);
+				            \draw (13, 6) -- (15, 6);
+				            \draw (13, 2) -- (15, 2);
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.486cm](N6) at (13, 6){} node[anchor=south west] at ([xshift=0.16cm, yshift=0.16cm]N6.text){$\text{H}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.486cm](N7) at (13, 2){} node[anchor=south west] at ([xshift=0.16cm, yshift=0.16cm]N7.text){$\text{I}$};
+				            \node[ground] at (22, 1){};
+				            \node[shape=rectangle, minimum width=1.715cm, minimum height=1.215cm] at (23.375, 0.875){} node[anchor=north west, align=left, text width=1.327cm, inner sep=6pt] at (22.5, 1.5){Référence (0 V)};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.486cm](N8) at (22, 1){} node[anchor=south east] at (N8.north west){$\text{I}$};
+				            \node[shape=rectangle, draw, dash pattern={on 1.6pt off 1.6pt}, minimum width=5.736cm, minimum height=2.486cm] at (3.625, 7){};
+				            \node[shape=rectangle, minimum width=0.715cm, minimum height=0.715cm] at (1.125, 7.875){} node[anchor=west, align=left, text width=0.327cm, inner sep=6pt] at (0.75, 7.875){$V_1$};
+				            \node[shape=rectangle, minimum width=0.715cm, minimum height=0.715cm] at (9.625, 8){} node[anchor=west, align=left, text width=0.327cm, inner sep=6pt] at (9.25, 8){$V_2$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.486cm](N9) at (19, 7){} node[anchor=south] at ([yshift=0.06cm]N9.north){$\text{D}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.486cm](N10) at (19, 1){} node[anchor=north] at ([yshift=-0.06cm]N10.south){$\text{E}$};
+			            \end{tikzpicture}
+		            }
+		      \item Produit $GV$:
+		            \begin{gather*}
+			            GV=\sage{_G}\sage{V}\\
+			            GV=I\Longrightarrow\sage{G}\sage{V}=\sage{I_R}
+		            \end{gather*}
+		            Par inspection du schéma plus haut, on sait que $V_x=V_1$. Aussi, par la loi d'Ohm:
+		            \begin{gather*}
+			            I=\frac{V}{R}\Longrightarrow I_x=\sage{_I_x}=\sage{I_x}
+		            \end{gather*}
+		            Ainsi:
+		            \begin{gather*}
+			            I=\sage{I}
+		            \end{gather*}
+		      \item Substitution dans l'équation matricielle:
+		            \begin{gather*}
+			            \sage{G}\sage{V}=\sage{I}
+		            \end{gather*}
+		      \item Résolution:
+		            \begin{gather*}
+			            \sage{_V_rref}
+		            \end{gather*}
+		      \item Identification:
+		            \begin{gather*}
+			            \boxed{\:\:V_x=V_1=\qtys{V_1.subs(I_y = I_y)}{2}{V}\qquad\qquad I_x=\sage{_I_x}=\qtys{I_x.subs(V_1 = V_1)}{2}{A}\:\:}
+		            \end{gather*}
+	      \end{itemize}
+	      \newpage
+	      \begin{sagesilent}
+		      I_1 = var('I_1')
+		      I_2 = var('I_2')
+		      I_x = var('I_x')
+		      V_x = var('V_x')
+
+		      R_11, _R_11 = _dexpr([R_1,R_2])
+		      R_12, _R_12 = _dexpr([-R_1])
+		      R_21, _R_21 = _dexpr([-R_1])
+		      R_22, _R_22 = _dexpr([R_1,R_1])
+		      R, _R = matdexpr([[[R_11,_R_11],[R_12,_R_12]],[[R_21,_R_21],[R_22,_R_22]]])
+
+		      I, _I = matdexpr([[I_1],[I_2]])
+
+		      V_x_CF = I_x_AB
+		      V_ind_GA = svar('V_ind_GA', r"V_{\text{ind.}_{GA}}")
+		      V_ind_GA = I_ind_GA
+		      V_11, _V_11 = _dexpr([V_x_FC,-V_x_CF,-V_ind_GA])
+		      V_21, _V_21 = _dexpr([V_ind_DE,-V_x_FC])
+		      V, _V = matdexpr([[[V_11,_V_11]],[[V_21,_V_21]]])
+
+		      SYS = R * I - V
+		      V_x_1 = solve(SYS[0][0] == 0, V_x)[0].rhs()
+		      V_x_2 = solve(SYS[1][0] == 0, V_x)[0].rhs()
+		      V = V.subs(V_x = V_x_1)
+		      I_rref, _I_rref, sol_I = prepare_rref_matrix(R, I, V, "A")
+
+		      I_x = I_2
+		      sol_I[I_1] = sol_I[I_1].subs(I_x = I_x)
+		      V_x_1 = V_x_1.subs(I_x = I_x)
+		      LKC_C, _LKC_C = dexpr([I_x,[V_x_FC,DIV,R_1],[[V_x_CF.subs(I_x=I_x),PLUS,V_ind_GA],DIV,R_2]],[0])
+		      LKC_C_V_x = LKC_C.subs(V_x = V_x_1)
+		      LKC_C_I_2 = LKC_C_V_x.subs(sol_I)
+		      I_2 = solve(LKC_C_I_2, I_2)[0].rhs()
+		      V_x = V_x_1.subs(sol_I).subs(I_2 = I_2)
+	      \end{sagesilent}
+	\item Méthode des mailles:
+	      \begin{itemize}
+		      \item Transformation des sources de courant en sources de tension:
+		            \sfig[.78]{\begin{tikzpicture}[thick]
+				            % Paths, nodes and wires:
+				            \draw (1, 1) -- (13, 1);
+				            \draw (7, 7) to[american controlled voltage source, l_={$2I_x$}] (4, 7);
+				            \draw (4, 7) to[american resistor, l={$2$}] (1, 7);
+				            \draw (7, 7) to[american resistor, l={$1$}] (7, 4);
+				            \draw (7, 4) to[american controlled voltage source, l={$4V_x$}] (7, 1);
+				            \draw (13, 1) to[american resistor, l={$1$}] (13, 7);
+				            \draw (13, 7) to[american resistor, l={$1$}] (7, 7);
+				            \draw (13, 7) -- (16, 7);
+				            \draw (16, 7) to[american voltage source, l={$\text{5 V}$}] (16, 1);
+				            \draw (16, 1) |- (13, 1);
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.486cm](N1) at (7, 7){} node[anchor=south] at ([yshift=0.06cm]N1.north){$\text{C}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.486cm](N2) at (13, 7){} node[anchor=south] at ([yshift=0.06cm]N2.north){$\text{D}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.486cm](N3) at (7, 1){} node[anchor=north] at ([yshift=-0.06cm]N3.south){$\text{F}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.486cm](N4) at (13, 1){} node[anchor=north] at ([yshift=-0.06cm]N4.south){$\text{E}$};
+				            \draw[-latex] (9.5, 7.5) -- (7.5, 7.5);
+				            \node[shape=rectangle, minimum width=0.715cm, minimum height=0.715cm] at (8.5, 7.875){} node[anchor=north, align=center, text width=0.327cm, inner sep=6pt] at (8.5, 8.25){$I_x$};
+				            \draw (1, 7) to[american controlled voltage source, l_={$3\text{ V}$}] (1, 1);
+			            \end{tikzpicture}
+		            }
+		      \item Puisque la tension aux bornes de la résistance de droite est la même que celle de la source de tension de $\qtys{V_ind_DE}{0}{V}$, on peut ignorer cette résistance et le circuit se simplifie comme dans la figure ci-dessous. On y définit deux mailles:
+		            \sfig[.78]{\begin{tikzpicture}[thick]
+				            % Paths, nodes and wires:
+				            \draw (1, 1) -- (13, 1);
+				            \draw (7, 7) to[american controlled voltage source, l_={$2I_x$}] (4, 7);
+				            \draw (4, 7) to[american resistor, l={$2$}] (1, 7);
+				            \draw (7, 7) to[american resistor, l={$1$}] (7, 4);
+				            \draw (7, 4) to[american controlled voltage source, l={$4V_x$}] (7, 1);
+				            \draw (13, 7) to[american resistor, l={$1$}] (7, 7);
+				            \draw (13, 7) to[american voltage source, l={$\text{5 V}$}] (13, 1);
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.486cm](N1) at (7, 7){} node[anchor=south] at ([yshift=0.06cm]N1.north){$\text{C}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.486cm](N2) at (7, 1){} node[anchor=north] at ([yshift=-0.06cm]N2.south){$\text{F}$};
+				            \draw[-latex] (9.5, 7.5) -- (7.5, 7.5);
+				            \node[shape=rectangle, minimum width=0.715cm, minimum height=0.715cm] at (8.5, 7.875){} node[anchor=north, align=center, text width=0.327cm, inner sep=6pt] at (8.5, 8.25){$I_x$};
+				            \draw (1, 7) to[american controlled voltage source, l_={$3\text{ V}$}] (1, 1);
+				            \node[circulator, xscale=1.5, yscale=-1.5](N3) at (4, 3.99){} node[anchor=north] at (N3.text){$I_1$};
+				            \node[circulator, xscale=1.5, yscale=-1.5](N4) at (10, 3.985){} node[anchor=north] at (N4.text){$I_2$};
+			            \end{tikzpicture}
+		            }
+		      \item Représentation matricielle:
+		            \begin{gather*}
+			            \sage{_R}\sage{I}=\sage{R}\sage{I}=\sage{_V}
+		            \end{gather*}
+		      \item De la première ou deuxième ligne, on peut isoler $V_x$:
+		            \begin{gather*}
+			            V_{x_1}=\sage{V_x_1}\\
+			            V_{x_2}=\sage{V_x_2}
+		            \end{gather*}
+		      \item Puis remplacer (avec $V_{x_1}$):
+		            \begin{gather*}
+			            \sage{R}\sage{I}=\sage{V}
+		            \end{gather*}
+		      \item Enfin, simplifier:
+		            \begin{gather*}
+			            \sage{_I_rref}
+		            \end{gather*}
+		      \item Or, $I_2=I_x$. LKC au nœud C:
+		            \begin{gather*}
+			            \sage{_LKC_C}
+		            \end{gather*}
+		      \item Substitution de $V_{x_1}\equiv V_x$:
+		            \begin{gather*}
+			            \sage{LKC_C_V_x}
+		            \end{gather*}
+		      \item Substitution de $I_1$:
+		            \begin{gather*}
+			            \sage{LKC_C_I_2}\Longrightarrow\boxed{I_2=I_x=\qtys{I_2}{0}{A}}
+		            \end{gather*}
+		      \item Calcul numérique de $V_x$:
+		            \begin{gather*}
+			            \boxed{V_x=\sage{V_x_1}=\qtys{V_x}{2}{V}}
+		            \end{gather*}
+	      \end{itemize}
+\end{enumerate}
+\newpage
+\section*{Question 3}
+\begin{sagesilent}
+	V = var('V')
+	P = var('P')
+	I_A = var('I_A')
+	I_B = var('I_B')
+	I_N = var('I_N')
+	I_R_1 = svar('I_R_1', r"I_{R_1}")
+	I_R_4 = svar('I_R_4', r"I_{R_4}")
+	R = V^2 / P
+
+	V_1 = 120
+	V_2 = 120
+	R_C = QQ(0.1)
+
+	P_nom_R_1_2 = 60
+	P_nom_R_3 = 100
+	P_nom_R_4 = 3600
+	V_nom_R_1_2 = 120
+	V_nom_R_3 = 120
+	V_nom_R_4 = 240
+
+	R_1 = R.subs(V = V_nom_R_1_2, P = P_nom_R_1_2)
+	R_2 = R_1
+	R_3 = R.subs(V = V_nom_R_3, P = P_nom_R_3)
+	R_4 = R.subs(V = V_nom_R_4, P = P_nom_R_4)
+
+	I_R_1, _I_R_1 = dexpr([V_1,DIV,R_1])
+	I_R_2, _I_R_2 = dexpr([V_2,DIV,R_2])
+	I_R_3, _I_R_3 = dexpr([V_1,DIV,R_3])
+	I_R_4, _I_R_4 = dexpr([[V_1,PLUS,V_2],DIV,[R_4]])
+	LKC_H, _LKC_H = dexpr([I_A],[I_R_1,I_R_4])
+	I_A = solve(LKC_H, I_A)[0].rhs()
+
+	LKC_D, _LKC_D = dexpr([I_R_4,I_R_2],[I_B])
+	I_B = solve(LKC_D, I_B)[0].rhs()
+
+	LKC_N, _LKC_N = dexpr([I_R_1],[I_R_2,I_N])
+	I_N = solve(LKC_N, I_N)[0].rhs()
+\end{sagesilent}
+\questionenum{Le circuit de la figure 3 représente un circuit électrique résidentiel constitué de deux sources de tension alternatives fournissant des tensions de \qtys{V_1}{0}{V} et de \qtys{2*V_1}{0}{V} (RMS). Les résistances RC représentent les résistances des conducteurs reliant les sources aux charges $R_1$, $R_2$, $R_3$ et $R_4$. Les valeurs nominales des charges sont données par:
+	\begin{itemize}
+		\item Charges $R_1$ et $R_2$ : $P_\text{nom.}=\qtys{P_nom_R_1_2}{0}{W}$, $V_\text{nom.}=\qtys{V_nom_R_1_2}{0}{V}$;
+		\item Charge $R_3$: $P_\text{nom.}=\qtys{P_nom_R_3}{0}{W}$, $V_\text{nom.}=\qtys{V_nom_R_3}{0}{V}$;
+		\item Charge $R_4$: $P_\text{nom.}=\qtys{P_nom_R_4}{0}{W}$, $V_\text{nom.}=\qtys{V_nom_R_4}{0}{V}$.
+	\end{itemize}
+	\begin{enumerate}
+		\item En considérant les résistances des conducteurs comme négligeables ($R_C=0$) et en supposant que la charge 3 n'est pas connectée au circuit ($R_3=\infty$ impliquant une charge équilibrée en termes des deux phases), déterminez les courants (RMS) dans les deux phases ($I_A$ et $I_B$) et dans le fil neutre ($I_N$) ainsi que les tensions (RMS) aux bornes des charges $V_{AN}$, $V_{NB}$ et $V_{AB}$ par rapport à la mise à la terre du côté des sources. On vous suggère de déterminer en premier lieu les valeurs des résistances de charge $R_1$, $R_2$, $R_3$ et $R_4$.
+		\item En supposant qu'il y a rupture du fil neutre au point $N$, refaites la sous-question précédente.
+		\item En considérant les résistances des conducteurs comme négligeables ($R_C=0$) et en supposant que la charge 3 est connectée ($R_3\neq\infty$ impliquant une charge non équilibrée en termes des deux phases), déterminez les courants (RMS) dans les deux phases ($I_A$ et $I_B$) et dans le fil neutre $I_N$ ainsi que les tensions (RMS) aux bornes des charges $V_{AN}$, $V_{NB}$ et $V_{AB}$. Discutez en une ligne.
+		\item En supposant qu'il y a rupture du fil neutre au point N, refaites la sous-question précédente et discutez des résultats obtenus en une ligne.
+		\item En considérant les résistances des conducteurs non négligeables ($R_C=\qtys{R_C}{1}{\Omega}$) et en supposant que la charge 3 est connectée ($R_3\neq\infty$ impliquant une charge non équilibrée en termes des deux phases), déterminez les courants (RMS) dans les deux phases ($I_A$ et $I_B$) et dans le fil neutre $I_N$ ainsi que les tensions (RMS) aux bornes des charges $V_{AN}$, $V_{NB}$ et $V_{AB}$.
+	\end{enumerate}
+	\begin{figure}[h!]
+		\centering
+		\linespread{1}
+		\scalebox{.7}{\begin{tikzpicture}[thick]
+				% Paths, nodes and wires:
+				\draw (18, 1) -- (11, 1);
+				\draw (11, 4) -- (16, 4);
+				\draw (1, 1) to[sinusoidal current source, l={\qtys{V_2}{0}{V} (RMS)}] (1, 4);
+				\draw (1, 4) to[sinusoidal current source, l={\qtys{V_1}{0}{V} (RMS)}] (1, 7);
+				\draw (1, 7) -- (3, 7);
+				\draw (3, 7) to[american resistor, l={$R_C$}] (5, 7);
+				\draw (5, 7) -- (11, 7);
+				\draw (11, 7) to[american resistor, l={$R_1$}] (11, 4);
+				\draw (11, 4) to[american resistor, l={$R_2$}] (11, 1);
+				\draw (1, 4) -- (3, 4);
+				\draw (3, 4) to[american resistor, l={$R_C$}] (5, 4);
+				\draw (5, 4) -- (11, 4);
+				\draw (11, 1) -- (5, 1);
+				\draw (5, 1) to[american resistor, l={$R_C$}] (3, 1);
+				\draw (3, 1) -- (1, 1);
+				\draw[-latex] (1.25, 7.25) -- (2.75, 7.25);
+				\node[shape=rectangle, minimum width=0.715cm, minimum height=0.715cm] at (2, 7.625){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (2, 7.625){$I_A$};
+				\draw[latex-] (1.25, 4.25) -- (2.75, 4.25);
+				\node[shape=rectangle, minimum width=0.715cm, minimum height=0.715cm] at (2, 4.625){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (2, 4.625){$I_N$};
+				\draw[latex-] (1.25, 1.25) -- (2.75, 1.25);
+				\node[shape=rectangle, minimum width=0.715cm, minimum height=0.715cm] at (2, 1.625){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (2, 1.625){$I_B$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N1) at (8, 7){} node[anchor=south] at (N1.north){$\text{A}$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N2) at (8, 4){} node[anchor=south] at (N2.north){$\text{N}$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N3) at (8, 1){} node[anchor=south] at (N3.north){$\text{B}$};
+				\node[shape=rectangle, minimum width=0.715cm, minimum height=1.465cm] at (10, 5.5){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (10, 5.5){$+$ $V_{AN}$ $-$};
+				\node[shape=rectangle, minimum width=0.715cm, minimum height=1.465cm] at (10, 2.5){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (10, 2.5){$+$ $V_{NB}$ $-$};
+				\draw (11, 7) -- (16, 7);
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N4) at (11, 7){} node[anchor=south] at (N4.north){$\text{H}$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N5) at (11, 4){} node[anchor=south west] at (N5.north east){$\text{C}$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N6) at (11, 1){} node[anchor=south west] at (N6.north east){$\text{D}$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N7) at (14, 4){} node[anchor=south] at (N7.north){$\text{F}$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N8) at (14, 7){} node[anchor=south] at (N8.north){$\text{E}$};
+				\draw (16, 7) to[american resistor, l={$R_3$}] (16, 4);
+				\draw (16, 7) -- (18, 7);
+				\draw (18, 7) to[american resistor, l={$R_4$}] (18, 1);
+				\node[shape=rectangle, minimum width=0.715cm, minimum height=1.465cm] at (17, 4){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (17, 4){$+$ $V_{AB}$ $-$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N9) at (16, 7){} node[anchor=south] at (N9.north){$\text{G}$};
+				\draw (1, 4) -- (0, 4);
+				\node[ground] at (0, 4){};
+				\node[shape=rectangle, minimum width=0.715cm, minimum height=1.465cm] at (1.625, 5.5){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (1.625, 5.5){$+$\\$\:$ $-$};
+				\node[shape=rectangle, minimum width=0.715cm, minimum height=1.465cm] at (1.625, 2.5){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (1.625, 2.5){$+$\\$\:$ $-$};
+			\end{tikzpicture}}
+		\caption{Circuit électrique résidentiel.}
+	\end{figure}}
+\begin{enumerate}
+	\item Le circuit devient:
+	      \sfig[.7]{\begin{tikzpicture}[thick]
+			      % Paths, nodes and wires:
+			      \draw (18, 1) -- (11, 1);
+			      \draw (1, 1) to[sinusoidal current source, l={\qtys{V_2}{0}{V} (RMS)}] (1, 4);
+			      \draw (1, 4) to[sinusoidal current source, l={\qtys{V_1}{0}{V} (RMS)}] (1, 7);
+			      \draw (1, 7) -- (3, 7);
+			      \draw (5, 7) -- (11, 7);
+			      \draw (11, 7) to[american resistor, l={$R_1$}] (11, 4);
+			      \draw (11, 4) to[american resistor, l={$R_2$}] (11, 1);
+			      \draw (1, 4) -- (3, 4);
+			      \draw (5, 4) -- (11, 4);
+			      \draw (11, 1) -- (5, 1);
+			      \draw (3, 1) -- (1, 1);
+			      \draw[-latex] (1.25, 7.25) -- (2.75, 7.25);
+			      \node[shape=rectangle, minimum width=0.715cm, minimum height=0.715cm] at (2, 7.625){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (2, 7.625){$I_A$};
+			      \draw[latex-] (1.25, 4.25) -- (2.75, 4.25);
+			      \node[shape=rectangle, minimum width=0.715cm, minimum height=0.715cm] at (2, 4.625){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (2, 4.625){$I_N$};
+			      \draw[latex-] (1.25, 1.25) -- (2.75, 1.25);
+			      \node[shape=rectangle, minimum width=0.715cm, minimum height=0.715cm] at (2, 1.625){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (2, 1.625){$I_B$};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N1) at (8, 7){} node[anchor=south] at (N1.north){$\text{A}$};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N2) at (8, 4){} node[anchor=south] at (N2.north){$\text{N}$};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N3) at (8, 1){} node[anchor=south] at (N3.north){$\text{B}$};
+			      \node[shape=rectangle, minimum width=0.715cm, minimum height=1.465cm] at (10, 5.5){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (10, 5.5){$+$ $V_{AN}$ $-$};
+			      \node[shape=rectangle, minimum width=0.715cm, minimum height=1.465cm] at (10, 2.5){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (10, 2.5){$+$ $V_{NB}$ $-$};
+			      \draw (11, 7) -- (16, 7);
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N4) at (11, 7){} node[anchor=south] at (N4.north){$\text{H}$};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N5) at (11, 4){} node[anchor=south west] at (N5.north east){$\text{C}$};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N6) at (11, 1){} node[anchor=south west] at (N6.north east){$\text{D}$};
+			      \draw (16, 7) -- (18, 7);
+			      \draw (18, 7) to[american resistor, l={$R_4$}] (18, 1);
+			      \node[shape=rectangle, minimum width=0.715cm, minimum height=1.465cm] at (17, 4){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (17, 4){$+$ $V_{AB}$ $-$};
+			      \draw (1, 4) -- (0, 4);
+			      \node[ground] at (0, 4){};
+			      \node[shape=rectangle, minimum width=0.715cm, minimum height=1.465cm] at (1.625, 5.5){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (1.625, 5.5){$+$\\ $\:$ $-$};
+			      \node[shape=rectangle, minimum width=0.715cm, minimum height=1.465cm] at (1.625, 2.5){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (1.625, 2.5){$+$\\$\:$ $-$};
+			      \draw (3, 1) -- (5, 1);
+			      \draw (5, 4) |- (3, 4);
+			      \draw (5, 7) -- (3, 7);
+		      \end{tikzpicture}}
+
+	      Posons $V_{AN}\equiv V_{A}$ et $V_{NB}\equiv V_{B}$.
+	      \begin{itemize}
+		      \item Pour déterminer les valeurs des résistances de charge, il faut mettre en relation quelques formules:
+		            \begin{gather*}
+			            P=VI\Longrightarrow P=V\prb{\frac{V}{R}}=\frac{V^2}{R}\Longleftrightarrow R=\frac{V^2}{P}
+		            \end{gather*}
+		            Dans notre cas, on remplacera $V$ par $V_\text{nom.}$ et $P$ par $P_\text{nom.}$. De fait, les valeurs des résistances de charge sont:\quad\boxed{\text{$R_1,R_2=\qtys{R_1}{0}{\Omega}$,\quad$R_3=\qtys{R_3}{0}{\Omega}$\quad et\quad$R_4=\qtys{R_4}{0}{\Omega}$}}.
+		      \item Courants RMS dans les deux phases:
+		            \begin{itemize}
+			            \item $I_A$ et $I_B$:
+			                  \begin{gather*}
+				                  I_R=\frac{V}{R}\Longrightarrow I_{R_1}=\sage{_I_R_1}=\qtys{I_R_1}{2}{A}\\
+				                  \Longrightarrow I_{R_2}=\sage{_I_R_2}=\qtys{I_R_2}{2}{A}\\
+				                  \Longrightarrow I_{R_4}=\sage{_I_R_4}=\qtys{I_R_4}{2}{A}
+			                  \end{gather*}
+			                  LKC au point A:
+			                  \begin{gather*}
+				                  \sage{_LKC_H}\Longrightarrow\boxed{I_A=\qtys{I_A}{2}{A}}
+			                  \end{gather*}
+			                  On a posé un courant $I_{R_1}\:\sens{H}{C}$ et un courant $I_{R_4}\:\sens{H}{D}$ passant par la résistance éponyme à leur indice. On fait maintenant la LKC au point D pour obtenir une autre équation:
+			                  \begin{gather*}
+				                  \sage{_LKC_D}\Longrightarrow\boxed{I_B=\qtys{I_B}{2}{A}}
+			                  \end{gather*}
+		            \end{itemize}
+		      \item Courant $I_N$:
+		            \begin{itemize}
+			            \item LKC au point N:
+			                  \begin{gather*}
+				                  \sage{_LKC_N}\Longrightarrow\boxed{I_N=\qtys{I_N}{0}{A}}
+			                  \end{gather*}
+		            \end{itemize}
+	      \end{itemize}
+	\item Puisque le fil neutre est brisé, aucun courant n'y passe ($I_N=\qty{0}{A}$). Or, dans la sous-question précédente, $I_N=\qtys{I_N}{0}{A}$ également. On voit alors que lorsque la charge est équilibrée (comme c'est le cas ici), la perte du fil neutre n'a pas d'impact sur les courants étudiés.
+	\item \sfig[.7]{\begin{tikzpicture}[thick]
+			      % Paths, nodes and wires:
+			      \draw (11, 4) |- (8.5, 4);
+			      \draw (18, 1) -- (11, 1);
+			      \draw (11, 4) -- (16, 4);
+			      \draw (1, 1) to[sinusoidal current source, l={\qtys{V_1}{0}{V} (RMS)}] (1, 4);
+			      \draw (1, 4) to[sinusoidal current source, l={\qtys{V_2}{0}{V} (RMS)}] (1, 7);
+			      \draw (1, 7) -- (3, 7);
+			      \draw (5, 7) -- (11, 7);
+			      \draw (11, 7) to[american resistor, l={$R_1$}] (11, 4);
+			      \draw (11, 4) to[american resistor, l={$R_2$}] (11, 1);
+			      \draw (1, 4) -- (3, 4);
+			      \draw (11, 1) -- (5, 1);
+			      \draw (3, 1) -- (1, 1);
+			      \draw[-latex] (1.25, 7.25) -- (2.75, 7.25);
+			      \node[shape=rectangle, minimum width=0.715cm, minimum height=0.715cm] at (2, 7.625){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (2, 7.625){$I_A$};
+			      \draw[latex-] (1.25, 4.25) -- (2.75, 4.25);
+			      \node[shape=rectangle, minimum width=0.715cm, minimum height=0.715cm] at (2, 4.625){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (2, 4.625){$I_N$};
+			      \draw[latex-] (1.25, 1.25) -- (2.75, 1.25);
+			      \node[shape=rectangle, minimum width=0.715cm, minimum height=0.715cm] at (2, 1.625){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (2, 1.625){$I_B$};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N1) at (8, 7){} node[anchor=south] at (N1.north){$\text{A}$};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N2) at (8, 1){} node[anchor=south] at (N2.north){$\text{B}$};
+			      \node[shape=rectangle, minimum width=0.715cm, minimum height=1.465cm] at (10, 5.5){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (10, 5.5){$+$ $V_{AN}$ $-$};
+			      \node[shape=rectangle, minimum width=0.715cm, minimum height=1.465cm] at (10, 2.5){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (10, 2.5){$+$ $V_{NB}$ $-$};
+			      \draw (11, 7) -- (16, 7);
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N3) at (11, 7){} node[anchor=south] at (N3.north){$\text{H}$};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N4) at (11, 4){} node[anchor=south west] at (N4.north east){$\text{C}$};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N5) at (11, 1){} node[anchor=south west] at (N5.north east){$\text{D}$};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N6) at (14, 4){} node[anchor=south] at (N6.north){$\text{F}$};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N7) at (14, 7){} node[anchor=south] at (N7.north){$\text{E}$};
+			      \draw (16, 7) to[american resistor, l={$R_3$}] (16, 4);
+			      \draw (16, 7) -- (18, 7);
+			      \draw (18, 7) to[american resistor, l={$R_4$}] (18, 1);
+			      \node[shape=rectangle, minimum width=0.715cm, minimum height=1.465cm] at (17, 4){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (17, 4){$+$ $V_{AB}$ $-$};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N8) at (16, 7){} node[anchor=south] at (N8.north){$\text{G}$};
+			      \draw (1, 4) -- (0, 4);
+			      \node[ground] at (0, 4){};
+			      \node[shape=rectangle, minimum width=0.715cm, minimum height=1.465cm] at (1.625, 5.5){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (1.625, 5.5){$+$ \\ $\:$ $-$};
+			      \node[shape=rectangle, minimum width=0.715cm, minimum height=1.465cm] at (1.625, 2.5){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (1.625, 2.5){$+$ \\ $\:$ $-$};
+			      \draw (5, 4) -- (7.5, 4);
+			      \draw (3, 4) -- (5, 4);
+			      \draw (3, 7) -- (5, 7);
+			      \draw (3, 1) -- (5, 1);
+			      \draw (7.5, 4) -- (8.5, 4);
+		      \end{tikzpicture}}
+	      On pose $I_{R_3}\:\sens{G}{C}$, un courant passant à travers la résistance $R_3$.
+	      \begin{sagesilent}
+		      # 3
+		      I_A = var('I_A')
+		      I_B = var('I_B')
+		      I_N = var('I_N')
+
+		      V_AB = V_1 + V_2
+		      V_A = var('V_A')
+		      V_B = var('V_B')
+
+		      LKC_A, _LKC_A = dexpr([I_A],[I_R_1,I_R_3,I_R_4])
+		      I_A = LKC_A.rhs()
+
+		      LKC_B, _LKC_B = dexpr([I_B],[I_R_2,I_R_4])
+		      I_B = LKC_B.rhs()
+
+		      LKC_C, _LKC_C = dexpr([I_N,I_R_2],[I_R_1,I_R_3])
+		      I_N = solve(LKC_C, I_N)[0].rhs()
+	      \end{sagesilent}
+	      \begin{itemize}
+		      \item Calcul de $I_{R_3}$:
+		            \begin{gather*}
+			            I_{R_3}=\sage{_I_R_3}=\qtys{I_R_3}{2}{A}
+		            \end{gather*}
+		      \item LKC au point A:
+		            \begin{gather*}
+			            \sage{_LKC_A}\Longrightarrow\boxed{I_A=\qtys{I_A}{2}{A}}
+		            \end{gather*}
+		      \item LKC au point B:
+		            \begin{gather*}
+			            \sage{_LKC_B}\Longrightarrow\boxed{I_B=\qtys{I_B}{2}{A}}
+		            \end{gather*}
+		      \item LKC au point C:
+		            \begin{gather*}
+			            \sage{_LKC_C}\Longrightarrow\boxed{I_N=\qtys{I_N}{2}{A}}
+		            \end{gather*}
+		            Le courant dans le fil neutre est différent de zéro puisque les charges sont déséquilibrées.
+		      \item Tensions:\quad\boxed{\text{$V_A=\qtys{V_1}{0}{V}$,\quad$V_B=\qtys{V_2}{0}{V}$\quad et\quad$V_{AB}=\qtys{V_1+V_2}{0}{V}$ (somme des deux premières)}}
+	      \end{itemize}
+	\item
+	      \sfig[.7]{\begin{tikzpicture}[thick]
+			      % Paths, nodes and wires:
+			      \draw (11, 4) |- (8.5, 4);
+			      \draw (18, 1) -- (11, 1);
+			      \draw (11, 4) -- (16, 4);
+			      \draw (1, 1) to[sinusoidal current source, l={\qtys{V_1}{0}{V} (RMS)}] (1, 4);
+			      \draw (1, 4) to[sinusoidal current source, l={\qtys{V_2}{0}{V} (RMS)}] (1, 7);
+			      \draw (1, 7) -- (3, 7);
+			      \draw (5, 7) -- (11, 7);
+			      \draw (11, 7) to[american resistor, l={$R_1$}] (11, 4);
+			      \draw (11, 4) to[american resistor, l={$R_2$}] (11, 1);
+			      \draw (1, 4) -- (3, 4);
+			      \draw (11, 1) -- (5, 1);
+			      \draw (3, 1) -- (1, 1);
+			      \draw[-latex] (1.25, 7.25) -- (2.75, 7.25);
+			      \node[shape=rectangle, minimum width=0.715cm, minimum height=0.715cm] at (2, 7.625){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (2, 7.625){$I_A$};
+			      \draw[latex-] (1.25, 4.25) -- (2.75, 4.25);
+			      \node[shape=rectangle, minimum width=0.715cm, minimum height=0.715cm] at (2, 4.625){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (2, 4.625){$I_N$};
+			      \draw[latex-] (1.25, 1.25) -- (2.75, 1.25);
+			      \node[shape=rectangle, minimum width=0.715cm, minimum height=0.715cm] at (2, 1.625){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (2, 1.625){$I_B$};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N1) at (8, 7){} node[anchor=south] at (N1.north){$\text{A}$};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N2) at (8, 1){} node[anchor=south] at (N2.north){$\text{B}$};
+			      \node[shape=rectangle, minimum width=0.715cm, minimum height=1.465cm] at (10, 5.5){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (10, 5.5){$+$ $V_{AN}$ $-$};
+			      \node[shape=rectangle, minimum width=0.715cm, minimum height=1.465cm] at (10, 2.5){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (10, 2.5){$+$ $V_{NB}$ $-$};
+			      \draw (11, 7) -- (16, 7);
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N3) at (11, 7){} node[anchor=south] at (N3.north){$\text{H}$};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N4) at (11, 4){} node[anchor=south west] at (N4.north east){$\text{C}$};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N5) at (11, 1){} node[anchor=south west] at (N5.north east){$\text{D}$};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N6) at (14, 4){} node[anchor=south] at (N6.north){$\text{F}$};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N7) at (14, 7){} node[anchor=south] at (N7.north){$\text{E}$};
+			      \draw (16, 7) to[american resistor, l={$R_3$}] (16, 4);
+			      \draw (16, 7) -- (18, 7);
+			      \draw (18, 7) to[american resistor, l={$R_4$}] (18, 1);
+			      \node[shape=rectangle, minimum width=0.715cm, minimum height=1.465cm] at (17, 4){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (17, 4){$+$ $V_{AB}$ $-$};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N8) at (16, 7){} node[anchor=south] at (N8.north){$\text{G}$};
+			      \draw (1, 4) -- (0, 4);
+			      \node[ground] at (0, 4){};
+			      \node[shape=rectangle, minimum width=0.715cm, minimum height=1.465cm] at (1.625, 5.5){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (1.625, 5.5){$+$ \\ $\:$ $-$};
+			      \node[shape=rectangle, minimum width=0.715cm, minimum height=1.465cm] at (1.625, 2.5){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (1.625, 2.5){$+$ \\ $\:$ $-$};
+			      \draw (5, 4) -- (7.5, 4);
+			      \draw (3, 4) -- (5, 4);
+			      \draw (3, 7) -- (5, 7);
+			      \draw (3, 1) -- (5, 1);
+			      \node[shape=rectangle, minimum width=0.965cm, minimum height=0.965cm] at (8, 4){} node[anchor=center, align=center, text width=0.577cm, inner sep=6pt] at (7.95, 4){Bris};
+		      \end{tikzpicture}}
+	      \begin{sagesilent}
+		      # 4
+		      I_A = var('I_A')
+		      I_B = var('I_B')
+		      R_1_par_R_3 = svar('R_1_par_R_3', r"R_1\parallelsum R_3")
+		      R_1_par_R_3 = compute_parallel_resistance([R_1,R_3])
+		      V_A, _V_A = dexpr([V_AB,TIMES,[R_1_par_R_3,DIV,[R_2,PLUS,R_1_par_R_3]]])
+
+		      LKT_Im, _LKT_Im = dexpr([V_AB,-V_A,-V_B],[0])
+		      V_B = solve(LKT_Im, V_B)[0].rhs()
+
+		      I_R_1, _I_R_1 = dexpr([V_A,DIV,R_1])
+		      I_R_2, _I_R_2 = dexpr([V_B,DIV,R_2])
+		      I_R_4, _I_R_4 = dexpr([V_AB,DIV,R_4])
+
+		      LKC_H, _LKC_H = dexpr([I_A],[I_R_1,I_R_4,I_R_3])
+		      I_A = solve(LKC_H, I_A)[0].rhs()
+
+		      LKC_D, _LKC_D = dexpr([I_B],[I_R_2,I_R_4])
+		      I_B = solve(LKC_D, I_B)[0].rhs()
+	      \end{sagesilent}
+	      Sans fil neutre, on a que les charges $R_1$ et $R_2$ sont maintenant en série entre les points H et D.
+	      \begin{itemize}
+		      \item Calcul des tensions:
+		            \begin{itemize}
+			            \item Calcul de $V_A$ par diviseur de tension:
+			                  \begin{gather*}
+				                  R_1\parallelsum R_3=\qtys{R_1_par_R_3}{0}{\Omega}\\
+				                  V_A=\sage{_V_A}=\qtys{V_A}{2}{V}
+			                  \end{gather*}
+			            \item On définit une maille partant des deux sources de gauche et progressant dans le sens horaire jusqu'à la résistance $R_3$. Calcul de $V_B$ par LKT:
+			                  \begin{gather*}
+				                  \sage{_LKT_Im}\Longrightarrow V_B=\qtys{V_B}{2}{V}
+			                  \end{gather*}
+			                  Quand les charges sont déséquilibrées, la rupture du fil neutre entraîne une diminution de tension aux bornes de la charge $R_1$ et une augmentation de la tension aux bornes de la charge $R_2$ (endommagement).
+		            \end{itemize}
+		      \item Calcul des courants:
+		            \begin{itemize}
+			            \item $I_{R_1}$:
+			                  \begin{gather*}
+				                  I_{R_1}=\sage{_I_R_1}=\qtys{I_R_1}{2}{A}
+			                  \end{gather*}
+			            \item $I_{R_4}$:
+			                  \begin{gather*}
+				                  I_{R_4}=\sage{_I_R_4}=\qtys{I_R_4}{0}{A}
+			                  \end{gather*}
+			            \item $I_{R_2}$:
+			                  \begin{gather*}
+				                  I_{R_2}=\sage{_I_R_2}=\qtys{I_R_2}{2}{A}
+			                  \end{gather*}
+			            \item LKC au point A:
+			                  \begin{gather*}
+				                  \sage{_LKC_H}\Longrightarrow I_A=\qtys{I_A}{2}{A}
+			                  \end{gather*}
+			            \item LKC au point B:
+			                  \begin{gather*}
+				                  \sage{_LKC_D}\Longrightarrow I_B=\qtys{I_B}{2}{A}
+			                  \end{gather*}
+			                  De plus, on a $I_N=0$.
+		            \end{itemize}
+	      \end{itemize}
+	      \sfig[.78]{\begin{tikzpicture}[thick]
+			      % Paths, nodes and wires:
+			      \draw (18, 1) -- (11, 1);
+			      \draw (11, 4) -- (16, 4);
+			      \draw (1, 1) to[sinusoidal current source, l={\qtys{V_1}{0}{V} (RMS)}] (1, 4);
+			      \draw (1, 4) to[sinusoidal current source, l={\qtys{V_1}{0}{V} (RMS)}] (1, 7);
+			      \draw (1, 7) -- (3, 7);
+			      \draw (3, 7) to[american resistor, l={$R_C$}] (5, 7);
+			      \draw (5, 7) -- (11, 7);
+			      \draw (11, 7) to[american resistor, l={$R_1$}] (11, 4);
+			      \draw (11, 4) to[american resistor, l={$R_2$}] (11, 1);
+			      \draw (1, 4) -- (3, 4);
+			      \draw (3, 4) to[american resistor, l={$R_C$}] (5, 4);
+			      \draw (5, 4) -- (11, 4);
+			      \draw (11, 1) -- (5, 1);
+			      \draw (5, 1) to[american resistor, l={$R_C$}] (3, 1);
+			      \draw (3, 1) -- (1, 1);
+			      \draw[-latex] (1.25, 7.25) -- (2.75, 7.25);
+			      \node[shape=rectangle, minimum width=0.715cm, minimum height=0.715cm] at (2, 7.625){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (2, 7.625){$I_A$};
+			      \draw[latex-] (1.25, 4.25) -- (2.75, 4.25);
+			      \node[shape=rectangle, minimum width=0.715cm, minimum height=0.715cm] at (2, 4.625){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (2, 4.625){$I_N$};
+			      \draw[latex-] (1.25, 1.25) -- (2.75, 1.25);
+			      \node[shape=rectangle, minimum width=0.715cm, minimum height=0.715cm] at (2, 1.625){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (2, 1.625){$I_B$};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N1) at (8, 7){} node[anchor=south] at (N1.north){$\text{A}$};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N2) at (8, 4){} node[anchor=south] at (N2.north){$\text{N}$};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N3) at (8, 1){} node[anchor=south] at (N3.north){$\text{B}$};
+			      \node[shape=rectangle, minimum width=0.715cm, minimum height=1.465cm] at (10, 5.5){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (10, 5.5){$+$ $V_{AN}$ $-$};
+			      \node[shape=rectangle, minimum width=0.715cm, minimum height=1.465cm] at (10, 2.5){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (10, 2.5){$+$ $V_{NB}$ $-$};
+			      \draw (11, 7) -- (16, 7);
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N4) at (11, 7){} node[anchor=south] at (N4.north){$\text{H}$};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N5) at (11, 4){} node[anchor=south west] at (N5.north east){$\text{C}$};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N6) at (11, 1){} node[anchor=south west] at (N6.north east){$\text{D}$};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N7) at (14, 4){} node[anchor=south] at (N7.north){$\text{F}$};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N8) at (14, 7){} node[anchor=south] at (N8.north){$\text{E}$};
+			      \draw (16, 7) to[american resistor, l={$R_3$}] (16, 4);
+			      \draw (16, 7) -- (18, 7);
+			      \draw (18, 7) to[american resistor, l={$R_4$}] (18, 1);
+			      \node[shape=rectangle, minimum width=0.715cm, minimum height=1.465cm] at (17, 4){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (17, 4){$+$ $V_{AB}$ $-$};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N9) at (16, 7){} node[anchor=south] at (N9.north){$\text{G}$};
+			      \draw (1, 4) -- (0, 4);
+			      \node[ground] at (0, 4){};
+			      \node[shape=rectangle, minimum width=0.715cm, minimum height=1.465cm] at (1.625, 5.5){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (1.625, 5.5){$+$ \\ $\:$ $-$};
+			      \node[shape=rectangle, minimum width=0.715cm, minimum height=1.465cm] at (1.625, 2.5){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (1.625, 2.5){$+$ \\ $\:$ $-$};
+			      \node[circulator, xscale=-1, yscale=-1](N10) at (6, 5.49){} node[anchor=north] at (N10.text){$I_1$};
+			      \node[circulator, xscale=-1, yscale=-1](N11) at (5.99, 2.5){} node[anchor=north] at (N11.text){$I_2$};
+			      \node[circulator, xscale=-1, yscale=-1](N12) at (14.49, 2.5){} node[anchor=north] at (N12.text){$I_3$};
+		      \end{tikzpicture}}
+	      \begin{sagesilent}
+		      I_1 = var('I_1')
+		      I_2 = var('I_2')
+		      I_3 = var('I_3')
+		      I_N = var('I_N')
+
+		      R_11 = _dexpr([R_C,R_1_par_R_3,R_C])
+		      R_12 = _dexpr([-R_C])
+		      R_13 = _dexpr([-R_1_par_R_3])
+		      R_21 = _dexpr([-R_C])
+		      R_22 = _dexpr([R_C,R_2,R_C])
+		      R_23 = _dexpr([-R_2])
+		      R_31 = _dexpr([-R_1_par_R_3])
+		      R_32 = _dexpr([-R_2])
+		      R_33 = _dexpr([R_1_par_R_3,R_4,R_2])
+
+		      R, _R = matdexpr([[R_11,R_12,R_13],[R_21,R_22,R_23],[R_31,R_32,R_33]])
+		      I = matrix([[I_1],[I_2],[I_3]])
+		      V = matrix([[V_1],[V_2],[0]])
+
+		      I_rref, _I_rref, sol_I = prepare_rref_matrix(R, I, V, "A", 2)
+
+		      I_1 = sol_I[I_1]
+		      I_2 = sol_I[I_2]
+		      I_3 = sol_I[I_3]
+		      I_A = I_1
+		      I_B = I_2
+
+		      LKC_C, _LKC_C = dexpr([I_1],[I_2,I_N])
+		      I_N = solve(LKC_C, I_N)[0].rhs()
+
+		      V_A, _V_A = dexpr([[R_1_par_R_3,[I_1,PLUS,-I_3]]])
+		      V_B, _V_B = dexpr([[R_2,[I_2,PLUS,-I_3]]])
+		      V_AB, _V_AB = dexpr([V_A,V_B])
+	      \end{sagesilent}
+		  \newpage
+	\item Résolution:
+	      \begin{itemize}
+		      \item On utilise la méthode des mailles pour calculer les courants du schéma:
+		            \begin{gather*}
+			            R=\sage{_R}=\sage{R}\\
+			            RI=V\Longrightarrow\sage{R}\sage{I}=\sage{V}\\
+			            \Longrightarrow\sage{_I_rref}
+		            \end{gather*}
+		            On obtient alors:
+		            \begin{itemize}
+			            \item $\boxed{I_A=I_1=\qtys{I_A}{2}{A}}$
+			            \item $\boxed{I_B=I_2=\qtys{I_B}{2}{A}}$
+			            \item LKC pour $I_N$ au point N:
+			                  \begin{gather*}
+				                  \sage{_LKC_C}\Longrightarrow\boxed{I_N=\qtys{I_N}{2}{A}}
+			                  \end{gather*}
+		            \end{itemize}
+		      \item On peut maintenant trouver les tensions à l'aide de la loi d'Ohm ($V=RI$):
+		            \begin{gather*}
+			            \scalebox{.9}{$\displaystyle V_A=\sage{_V_A}\Longrightarrow\boxed{V_A=\qtys{V_A}{2}{V}}$}\\
+			            \scalebox{.9}{$\displaystyle V_B=\sage{_V_B}\Longrightarrow \boxed{V_B=\qtys{V_B}{2}{V}}$}\\
+			            \scalebox{.9}{$\displaystyle V_{AB}=\sage{_V_AB}\Longrightarrow\boxed{V_{AB}=\qtys{V_AB}{2}{V}}$}
+		            \end{gather*}
+	      \end{itemize}
+\end{enumerate}
+\newpage
+\begin{sagesilent}
+	R_P = var('R_P')
+	V_AO = var('V_AO')
+	V_BO = var('V_BO')
+
+	V = 9
+	R_1 = 3000
+	R_2 = 2000
+	R_3 = 50000
+	R = 1000
+
+	P_F_1 = 24200
+	P_F_2 = 48400
+	R_F_1 = 75000
+	R_F_2 = 66000
+
+	V_PN, _V_PN = dexpr([V,MINUS,NEG,V])
+	V_AN, _V_AN = dexpr([[V_PN,[R_2,DIV,[R_1,PLUS,R_2]]]])
+	V_BN, _V_BN = dexpr([[V_PN,[R_3,DIV,[R_3,PLUS,R_P]]]])
+
+	# Le courant descend de P vers N.
+	LKT_ANO, _LKT_ANO = dexpr([V_AN],[V,V_AO])
+	V_AO = solve(LKT_ANO, V_AO)[0].rhs()
+
+	LKT_BNO, _LKT_BNO = dexpr([V_BN],[V,V_BO])
+	V_BO = solve(LKT_BNO, V_BO)[0].rhs()
+
+	V_1 = V_AO
+	V_2 = V_BO
+\end{sagesilent}
+\section*{Question 4}
+\questionenum{
+	\begin{enumerate}
+		\item Dans le circuit de détection de pression (capteur de pression) de la figure 4, le pont de résistances est alimenté par une source de tension bipolaire de $V=\pm\,\qtys{V}{0}{V}$ par rapport à la référence (mise à la terre) et contient un capteur de pression à coefficient négatif représentant une résistance $R_P$ variant en fonction de la pression tel qu'indiqué à la figure 5. Le pont de résistances est suivi par 2 circuits suiveurs et d'un circuit soustracteur obtenus à partir des amplificateurs opérationnels. Les valeurs des résistances sont données par $R_1=\qtys{R_1}{0}{\Omega}$, $R_2=\qtys{R_2}{0}{\Omega}$, $R_3=\qtys{R_3}{0}{\Omega}$ et $R=\qtys{R}{0}{\Omega}$. En considérant le modèle statique idéal pour les trois amplificateurs opérationnels ($v_e^+=v_e^-$ et $i_e^+=i_e^-=0$),
+		      \begin{enumerate}
+			      \item Déterminez la tension $V_{A0}$ (tension du nœud A par rapport à la terre).
+			      \item Déterminez, en fonction de $R_P$ (en K), la tension $V_{B0}$ (tension du nœud B par rapport à la terre).
+			      \item Déterminez alors, à partir de $V_{A0}$ et de $V_{B0}$, les tensions $V_1$ et $V_2$ (tensions aux sorties des deux circuits suiveurs par rapport à la terre).
+		      \end{enumerate}
+		      Note: on vous suggère d'utiliser la technique de diviseur de tensions et la loi de Kirchhoff relative aux tensions appliquée à des mailles fictives pour le pont de résistances en question.
+		      \begin{figure}[h!]
+			      \centering
+			      \linespread{1}
+			      \scalebox{.5}{\begin{tikzpicture}[thick]
+					      % Paths, nodes and wires:
+					      \draw (27, 5.125) -| (27, 4.625);
+					      \draw (25.5, 7.5) -- (27, 7.5);
+					      \draw (17.5, 8) to[american resistor, l={$R$}] (21.5, 8);
+					      \draw (5.5, 4) -- (5.5, 8.5) -- (15, 8.5);
+					      \draw (1, 7.5) to[american voltage source, l={\qtys{V}{0}{V} (RMS)}] (1, 4);
+					      \draw (1, 4) to[american voltage source, l={\qtys{V}{0}{V} (RMS)}] (1, 0.5);
+					      \draw (1, 4) -- (0, 4);
+					      \node[ground] at (0, 4){};
+					      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N1) at (1, 4){} node[anchor=west] at (N1.east){$\text{O}$};
+					      \draw (1, 7.5) -- (9, 7.5);
+					      \draw (9, 7.5) to[american resistor, l={$R_1$}] (5.5, 4);
+					      \draw (5.5, 4) to[american resistor, l={$R_2$}] (9, 0.5);
+					      \draw (9, 7.5) to[american resistor, l={$R_p$}, label distance=0.48cm] (12.5, 4);
+					      \draw (12.5, 4) to[american resistor, l={$R_3$}] (9, 0.5);
+					      \draw (1, 0.5) -- (9, 0.5);
+					      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N2) at (9, 0.5){} node[anchor=west] at (N2.east){$\text{N}$};
+					      \draw[-latex] (10.25, 5.25) -- (11.25, 6.25);
+					      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N3) at (5.5, 4){} node[anchor=west] at (N3.east){$\text{A}/V_A$};
+					      \node[op amp, xscale=1.02, yscale=-1.02] at (16.214, 7.999){};
+					      \draw (14.5, 7.5) -| (15, 7.499);
+					      \draw (14.5, 7.5) -| (14.5, 6.5) -- (17.5, 6.5) -| (17.5, 8) |- (17.428, 7.999);
+					      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N4) at (17.5, 8){} node[anchor=south west] at (N4.north east){$V_1$};
+					      \draw (21.5, 8) -- (21.5, 10);
+					      \draw (21.5, 10) to[american resistor, l={$R$}] (25.5, 10);
+					      \node[op amp, xscale=1.02, yscale=1.02] at (22.714, 7.5){};
+					      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm] at (21.5, 8){};
+					      \draw (23.928, 7.5) -| (25.5, 7.5);
+					      \draw (25.5, 10) -| (25.5, 7.5);
+					      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm] at (25.5, 7.5){};
+					      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm] at (27, 7.5){};
+					      \node[ground] at (27, 4.625){};
+					      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm] at (27, 5.125){};
+					      \draw (12.5, 4) -- (15, 4);
+					      \node[op amp, xscale=1.02, yscale=-1.02] at (16.214, 3.5){};
+					      \draw (17.428, 3.5) to[american resistor, l={$R$}] (21.5, 3.5);
+					      \draw (21.5, 7) -- (21.5, 3.5);
+					      \draw (21.5, 3.5) to[american resistor, l={$R$}] (21.5, 1);
+					      \node[ground] at (21.5, 1){};
+					      \node[shape=rectangle, minimum width=0.965cm, minimum height=1.965cm] at (27, 6.25){} node[anchor=center, align=center, text width=0.577cm, inner sep=6pt] at (27, 6.25){+ $V_s$ $-$};
+					      \draw (15, 3) -- (14.5, 3);
+					      \draw (14.5, 3) -- (14.5, 2);
+					      \draw (14.5, 2) -- (17.5, 2) -- (17.5, 3.5);
+					      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N5) at (17.5, 3.5){} node[anchor=south west] at (N5.north east){$V_2$};
+					      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N6) at (12.5, 4){} node[anchor=east] at (N6.west){$\text{B}/V_B$};
+					      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N7) at (9, 7.5){} node[anchor=south] at (N7.north){$\text{P}$};
+				      \end{tikzpicture}}
+			      \caption{Circuit de capteur de pression constitué d'un pont de résistances, d'un capteur de pression représenté par une résistance variable $R_P$, des amplificateurs opérationnels et des résistances.}
+		      \end{figure}
+		      \begin{figure}[h!]
+			      \centering
+			      \linespread{1}
+			      \scalebox{0.75}{\begin{tikzpicture}[>=stealth,thick]
+					      % Grid/Background helpers (optional, but good for alignment)
+					      % Draw Axes
+					      \draw[->, black, thick] (-0.5,0) -- (6.5,0) node[right, black!60!black] {Pression (\unit{kN/m^2})};
+					      \draw[->, black, thick] (0,-0.5) -- (0,5) node[above, black!60!black] {$R_P$ (\unit{\Omega})};
+
+					      % Define coordinates based on a scaled version of your data
+					      % Scaling: x/10 and y/20 to fit on a standard page
+					      \coordinate (A) at (2.42, 3.75); % Point (24.2, 75)
+					      \coordinate (B) at (4.84, 1.7);  % Point (48.4, 66)
+
+					      % Draw the main data line (extending slightly beyond points)
+					      \draw[black!60!black, thick, shorten >=-0.5cm, shorten <=-0.5cm] (2.42, 3.75) -- (4.84, 1.7);
+
+					      % Draw dashed projection lines
+					      \draw[dashed, black!60!black] (0, 3.75) -- (A) -- (2.42, 0);
+					      \draw[dashed, black!60!black] (0, 1.7) -- (B) -- (4.84, 0);
+
+					      % Add the red dots
+					      \fill[black] (0, 3.75) circle (2pt);
+					      \fill[black] (0, 1.7) circle (2pt);
+					      \fill[black] (2.42, 0) circle (2pt);
+					      \fill[black] (4.84, 0) circle (2pt);
+
+					      % Add Labels
+					      % Y-axis labels
+					      \node[left, black!80!black] at (0, 3.75) {\nums{R_F_1}{0}};
+					      \node[left, black!80!black] at (0, 1.7) {\nums{R_F_2}{0}};
+
+					      % X-axis labels
+					      \node[below, black!80!black] at (2.42, 0) {\nums{P_F_1}{0}};
+					      \node[below, black!80!black] at (4.84, 0) {\nums{P_F_2}{0}};
+				      \end{tikzpicture}}
+			      \caption{Caractéristique résistance ($R_P$ en \unit{\Omega}) en fonction de la pression ($P$ en \unit{kN/m^2}) d'un capteur de pression à coefficient négatif.}
+		      \end{figure}
+		\item En considérant les tensions $V_1$ et $V_2$ à la sortie des circuits suiveurs, et en appliquant le théorème de superposition, déterminez la tension de sortie $V_s$ en fonction de $R_P$.
+		\item Déterminez la valeur de la tension de sortie $V_s$ quand les pressions du capteur sont égales à \nums{P_F_1}{0}\units{N/m^2} et à \nums{P_F_2}{0}\units{N/m^2}, respectivement.
+	\end{enumerate}}On répond à chacune des sous-questions:
+\begin{enumerate}
+	\item Résolution:
+	      \begin{enumerate}
+		      \item[\quad(a) et (b)] On sait que le courant aux entrées $+$ des amplificateurs opérationnels des circuits suiveurs est nul.
+		            \begin{itemize}
+			            \item On peut alors appliquer un diviseur de tension pour trouver $V_{AN}$ et $V_{BN}$:
+			                  \begin{gather*}
+				                  V_{PN}=\sage{_V_PN}=\qtys{V_PN}{0}{V}\\
+				                  V_{AN}=\sage{_V_AN}=\qtys{V_AN}{2}{V}\\
+				                  V_{BN}=\sage{_V_BN}=\sage{V_BN}
+			                  \end{gather*}
+			            \item Pour trouver $V_{A0}$ et $V_{B0}$, on peut faire la LKT pour des mailles fictives entre les points A,~N~et~O et B,~N~et~O:
+			                  \begin{gather*}
+				                  \sage{_LKT_ANO}\Longrightarrow\boxed{V_{AO}=\qtys{V_AO}{2}{V}}\\
+				                  \sage{_LKT_BNO}\Longrightarrow\boxed{V_{BO}=\sage{V_BO}}
+			                  \end{gather*}
+		            \end{itemize}
+		      \item[(b)] Puisque les amplificateurs opérationnels auxquels le pont de résistance est connecté forment des suiveurs de tension, il s'ensuit que la tension aux bornes du premier amplificateur est la même que $V_{AO}$ (la même chose est vraie pour $V_{BO}$ et le deuxième amplificateur):
+		            \begin{gather*}
+			            \boxed{V_1=V_{AO}=\qtys{V_1}{2}{V}}\\
+			            \boxed{V_2=V_{BO}=\sage{V_2}}
+		            \end{gather*}
+	      \end{enumerate}
+	      \newpage
+	\item Si l'on «~tue~» la source d'où provient $V_2$, on obtient le circuit suivant:
+	      \sfig[.8]{\begin{tikzpicture}[thick]
+			      % Paths, nodes and wires:
+			      \draw (5.5, 3.5) -- (4.5, 3.5);
+			      \draw (5.5, 4.5) -| (4.5, 4.5);
+			      \draw (10, 1) -- (10, 0.75);
+			      \draw (8.5, 4) -- (10, 4);
+			      \draw (1, 4.5) to[american resistor, l={$R$}] (4.5, 4.5);
+			      \draw (4.5, 4.5) |- (4.5, 5.5);
+			      \draw (4.5, 5.5) to[american resistor, l={$R$}] (8.5, 5.5);
+			      \node[op amp, xscale=1.02, yscale=1.02] at (6.714, 4){};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm] at (4.5, 4.5){};
+			      \draw (7.75, 4) -| (8.5, 4);
+			      \draw (8.5, 5.5) -- (8.5, 4);
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm] at (8.5, 4){};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm] at (10, 4){};
+			      \node[ground] at (10, 1){};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm] at (10, 1){};
+			      \draw (2.75, 1) to[american resistor, l={$R$}] (2.75, 3.5);
+			      \draw (4.5, 3.5) to[american resistor, l_={$R$}] (4.5, 1);
+			      \node[ground] at (4.5, 1){};
+			      \node[shape=rectangle, minimum width=0.965cm, minimum height=2.465cm] at (10, 2.5){} node[anchor=center, align=center, text width=0.577cm, inner sep=6pt] at (10, 2.5){+ $V_{s_1}$ $-$};
+			      \draw (1, 4.5) to[american voltage source, l={$V_1$}] (1, 1);
+			      \draw (4.5, 1) |- (1, 1);
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm] at (2.75, 1){};
+			      \draw (2.75, 3.5) -- (4.5, 3.5);
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm] at (4.5, 3.5){};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm] at (4.5, 1){};
+		      \end{tikzpicture}}
+	      \begin{itemize}
+		      \begin{sagesilent}
+			      V_m = svar('V_m', r"V^-")
+			      I_R_1 = svar('I_R_1', r"I_R")
+			      I_R_1, _I_R_1 = dexpr([[V_1,MINUS,0],DIV,[R]])
+			      V_s_1, _V_s_1 = dexpr([0,MINUS,[R,I_R_1]])
+
+			      V_x, _V_x = dexpr([[V_2,[R,DIV,[R,PLUS,R]]]])
+			      I_R_2 = svar('I_R_2', r"I_R")
+			      I_R_2, _I_R_2 = dexpr([[V_x,MINUS,0],DIV,R])
+			      V_s_2, _V_s_2 = dexpr([V_m,[R,I_R_2]])
+			      V_s_2 = V_s_2.subs(V_m = V_x)
+
+			      V_s, _V_s = dexpr([V_s_1,V_s_2])
+		      \end{sagesilent}
+		      \item Compte tenu du fait que l'entrée non-inverseuse de l'amplificateur ne laisse passer aucun courant ($i_e^+=0$), il est possible d'ignorer les deux résistances en parallèle du bas. On a alors:
+		            \sfig[.8]{\begin{tikzpicture}[thick]
+				            % Paths, nodes and wires:
+				            \draw (5.5, 3.5) -- (4.5, 3.5);
+				            \draw (5.5, 4.5) -| (4.5, 4.5);
+				            \draw (10, 1) -- (10, 0.75);
+				            \draw (8.5, 4) -- (10, 4);
+				            \draw (1, 4.5) to[american resistor, l={$R$}] (4.5, 4.5);
+				            \draw (4.5, 4.5) |- (4.5, 5.5);
+				            \draw (4.5, 5.5) to[american resistor, l={$R$}] (8.5, 5.5);
+				            \node[op amp, xscale=1.02, yscale=1.02] at (6.714, 4){};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm] at (4.5, 4.5){};
+				            \draw (7.75, 4) -| (8.5, 4);
+				            \draw (8.5, 5.5) -- (8.5, 4);
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm] at (8.5, 4){};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm] at (10, 4){};
+				            \node[ground] at (10, 1){};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm] at (10, 1){};
+				            \node[ground] at (4.5, 1){};
+				            \node[shape=rectangle, minimum width=0.965cm, minimum height=2.465cm] at (10, 2.5){} node[anchor=center, align=center, text width=0.577cm, inner sep=6pt] at (10, 2.5){+ $V_{s_1}$ $-$};
+				            \draw (1, 4.5) to[american voltage source, l={$V_1$}] (1, 1);
+				            \draw (4.5, 1) |- (1, 1);
+				            \draw (4.5, 1) -- (4.5, 3.5);
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm] at (4.5, 1){};
+			            \end{tikzpicture}}
+		      \item Courant dans la résistance à gauche de l'entrée négative de l'amplificateur:
+		            \begin{gather*}
+			            I_R=\frac{V}{R}\Longrightarrow\sage{_I_R_1}=\qtys{I_R_1}{4}{A}
+		            \end{gather*}
+		      \item Tension à la sortie de l'amplificateur:
+		            \begin{gather*}
+			            \boxed{V_{s_1}=\sage{_V_s_1}=\qtys{V_s_1}{2}{V}}
+		            \end{gather*}
+	      \end{itemize}
+	      Si l'on «~tue~» la source d'où provient $V_1$, on obtient le circuit suivant:
+	      \sfig[.8]{\begin{tikzpicture}[thick]
+			      % Paths, nodes and wires:
+			      \draw (2, 3.5) to[american resistor, l={$R$}] (4.5, 3.5);
+			      \draw (4.5, 1) -- (10, 1);
+			      \draw (4.5, 3.5) to[american resistor, l={$R$}] (4.5, 1);
+			      \draw (5.5, 3.5) -- (4.5, 3.5);
+			      \draw (5.5, 4.5) -| (4.5, 4.5);
+			      \draw (8.5, 4) -- (10, 4);
+			      \draw (1, 4.5) to[american resistor, l={$R$}] (4.5, 4.5);
+			      \draw (4.5, 4.5) |- (4.5, 5.5);
+			      \draw (4.5, 5.5) to[american resistor, l={$R$}] (8.5, 5.5);
+			      \node[op amp, xscale=1.02, yscale=1.02] at (6.714, 4){};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm] at (4.5, 4.5){};
+			      \draw (7.75, 4) -- (8.5, 4);
+			      \draw (8.5, 5.5) -- (8.5, 4);
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm] at (8.5, 4){};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm] at (10, 4){};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm] at (10, 1){};
+			      \node[ground] at (4.5, 1){};
+			      \node[shape=rectangle, minimum width=0.965cm, minimum height=2.465cm] at (10, 2.5){} node[anchor=center, align=center, text width=0.577cm, inner sep=6pt] at (10, 2.5){+ $V_{s_2}$ $-$};
+			      \draw (4.5, 1) |- (1, 1);
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm] at (4.5, 1){};
+			      \draw (1, 4.5) -| (1, 1);
+			      \draw (2, 3.5) to[american voltage source, l={$V_2$}] (2, 1);
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm] at (4.5, 3.5){};
+			      \node[shape=rectangle, minimum width=0.715cm, minimum height=0.964cm] at (4.5, 4){} node[anchor=center, align=center, text width=0.327cm, inner sep=6pt] at (4.5, 4){$V_x$};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm] at (2, 1){};
+		      \end{tikzpicture}}
+	      \begin{itemize}
+		      \item On sait que $V^+=V_x$. Forcément, $V^-=V_x$ également.
+		      \item On peut appliquer un diviseur de tension pour obtenir la valeur de $V_x$:
+		            \begin{gather*}
+			            V_x=\sage{_V_x}=\sage{V_x}
+		            \end{gather*}
+		      \item Courant dans la résistance connectée à la masse:
+		            \begin{gather*}
+			            \sage{_I_R_2}=\sage{I_R_2}
+		            \end{gather*}
+		      \item Tension de sortie:
+		            \begin{gather*}
+			            V_{s_2}=\sage{_V_s_2}=\sage{V_s_2}
+		            \end{gather*}
+	      \end{itemize}
+	      Principe de superposition:
+	      \begin{gather*}
+		      \boxed{V_s=\sage{_V_s}=\sage{V_s}}
+	      \end{gather*}
+	\item Détermination de la tension $V_s$ selon la température:
+	      \begin{itemize}
+		      \item $P=\nums{P_F_1}{0}\units{N/m^2}\longrightarrow R=\qtys{R_F_1}{0}{\Omega}$:
+		            \begin{gather*}
+			            \boxed{V_s=\sage{V_s}=\qtys{V_s.subs(R_P = R_F_1)}{0}{V}}
+		            \end{gather*}
+		      \item $P=\nums{P_F_2}{0}\units{N/m^2}\longrightarrow R=\qtys{R_F_2}{0}{\Omega}$:
+		            \begin{gather*}
+			            \boxed{V_s=\sage{V_s}=\qtys{V_s.subs(R_P = R_F_2)}{2}{V}}
+		            \end{gather*}
+	      \end{itemize}
+\end{enumerate}
+\newpage
+\begin{sagesilent}
+	I_x = var('I_x')
+	I_y = var('I_y')
+	I_t = svar('I_t', r"I(t)")
+	V = var('V')
+
+	L = QQ(0.1)
+	R_1 = 1
+	R_2 = 2
+	R_3 = 3
+
+	R_TH_1_F = svar('R_TH_1_F', r"R_{TH_1}")
+	R_TH_1_F = 4/3
+	R_TH_2_F = svar('R_TH_2_F', r"R_{TH_2}")
+	R_TH_2_F = 5/7
+	V_TH_1_F = svar('V_TH_1_F', r"V_{TH_1}")
+	V_TH_1_F = 4
+	V_TH_2_F = svar('V_TH_2_F', r"V_{TH_2}")
+	V_TH_2_F = 0
+
+	I_ind_LK = svar('I_ind_LK', r"I_{\text{ind.}_{LK}}")
+	I_ind_LK = 3
+
+	V_ind_LM = svar('V_ind_LM', r"V_{\text{ind.}_{LM}})")
+	V_ind_LM = 9
+
+	V_MK, _V_MK = _dexpr([3 * I_y])
+	V_GH = 2 * I_x
+\end{sagesilent}
+\section*{Question 5}
+\questionenum{On veut relier deux circuits (circuit 1 à gauche des points A et B, et circuit 2 à droite des points C et D) ensemble. Le conducteur qui relie ces deux circuits agit comme une bobine d'inductance $L=\qtys{L}{1}{H}$ (voir la figure ci-dessous). Les sources sont appliquées à l'instant $t=0$ seconde. La bobine est initialement non chargée. Les valeurs de toutes les résistances sont en $\Omega$.\sage{set_rational_answers(False)}
+	\begin{figure}[h!]
+		\centering
+		\linespread{1}
+		\scalebox{0.75}{\begin{tikzpicture}[thick]
+				% Paths, nodes and wires:
+				\draw (1, 5) to[american voltage source, mirror, l={\qtys{V_ind_LM}{0}{V}}] (1, 1);
+				\draw (1, 5) to[american resistor, l_={\nums{R_1}{0}}] (5, 5);
+				\draw (5, 1) to[american current source, l={\qtys{I_ind_LK}{0}{A}}] (5, 5);
+				\draw (1, 1) -- (8, 1);
+				\draw (5, 5) -- (8, 5);
+				\draw (8, 5) to[american resistor, l={\nums{R_2}{0}}] (8, 1);
+				\node[shape=rectangle, minimum width=0.465cm, minimum height=1.09cm] at (8.5, 4.312){} node[anchor=center, align=center, text width=0.077cm, inner sep=6pt] at (8.5, 4.312){$I_y$};
+				\draw[-latex] (8.25, 4.75) -- (8.25, 3.75);
+				\draw (8, 5) to[american resistor, l={\nums{R_1}{0}}] (11, 5);
+				\draw (11, 5) to[american inductor, l={\sage{set_rational_answers(False)}\qtys{L}{1}{H}\sage{set_rational_answers(True)}}] (14, 5);
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N1) at (11, 5){} node[anchor=south] at (N1.north){$\text{A}$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N2) at (8, 5){} node[anchor=south] at (N2.north){$\text{I}$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N3) at (5, 1){} node[anchor=north] at (N3.south){$\text{L}$};
+				\draw (5, 6.25) to[american controlled current source, l_={$\sage{V_MK}$}] (1, 6.25);
+				\draw (1, 6.25) -| (1, 5);
+				\draw (5, 6.25) -| (5, 5);
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N4) at (5, 5){} node[anchor=south west] at (N4.north east){$\text{K}$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N5) at (1, 5){} node[anchor=south east] at (N5.north west){$\text{M}$};
+				\draw (8, 1) -- (11, 1);
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N6) at (8, 1){} node[anchor=north] at (N6.south){$\text{J}$};
+				\draw (11, 1) -- (14, 1);
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N7) at (11, 1){} node[anchor=south] at (N7.north){$\text{B}$};
+				\draw (16, 5) |- (14, 5);
+				\draw (16, 5) to[american resistor, l={\nums{R_1}{0}}] (16, 1);
+				\draw (16, 1) |- (14, 1);
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N8) at (14, 5){} node[anchor=south] at (N8.north){$\text{C}$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N9) at (14, 1){} node[anchor=south] at (N9.north){$\text{D}$};
+				\draw (16, 5) to[american resistor, l={\nums{R_1}{0}}] (19, 5);
+				\draw (19, 5) to[american resistor, l={\nums{R_1}{0}}] (19, 1);
+				\draw (16, 1) -- (19, 1);
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N10) at (16, 1){} node[anchor=north] at (N10.south){$\text{F}$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N11) at (16, 5){} node[anchor=south] at (N11.north){$\text{E}$};
+				\node[shape=rectangle, minimum width=0.465cm, minimum height=0.965cm] at (19.5, 4.25){} node[anchor=center, align=center, text width=0.077cm, inner sep=6pt] at (19.5, 4.25){$I_x$};
+				\draw[-latex] (19.25, 4.75) -- (19.25, 3.75);
+				\draw (19, 5) to[american resistor, l={\nums{R_3}{0}}] (22, 5);
+				\draw (22, 5) to[american controlled voltage source, mirror, l={$\sage{V_GH}$}] (22, 1);
+				\draw (22, 1) -- (19, 1);
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N12) at (19, 1){} node[anchor=north] at (N12.south){$\text{H}$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N13) at (19, 5){} node[anchor=south] at (N13.north){$\text{G}$};
+				\node[shape=rectangle, minimum width=0.465cm, minimum height=0.465cm] at (12.25, 4.398){} node[anchor=center, align=center, text width=0.077cm, inner sep=6pt] at (12.25, 4.398){$I(t)$};
+				\draw[-latex] (11.893, 4.75) -- (13.143, 4.75);
+				\draw[-latex] (11.5, 1.25) -| (11.5, 2) -- (10.75, 2);
+				\draw[-latex] (13.5, 1.25) -| (13.5, 2) -- (14.25, 2);
+			\end{tikzpicture}}
+		\caption{Circuit global contenant une inductance $L$.}
+	\end{figure}
+	\begin{enumerate}
+		\item \sage{set_rational_answers(True)}Déterminez les équivalents de Thévenin vus des deux côtés de la bobine ($V_{TH_1}$ et $R_{TH_1}$) à gauche des bornes A et B et ($V_{TH_2}$ et $R_{TH_2}$) à droite des bornes C et D.
+		\item Donnez l'expression mathématique du courant $i(t)$ dans la bobine à des constantes près pour $t\ge0$.
+		\item En prenant $V_{TH}=V_{TH_1}+V_{TH_2}$ et $R_{TH}=R_{TH_1}+R_{TH_2}$, donnez la valeur de la constante de temps, le pôle et l'équation caractéristique du circuit pour $t\ge0$ (supposez $V_{TH_1}=\qtys{V_TH_1_F}{0}{V}$, $V_{TH_2}=\qtys{V_TH_2_F}{0}{V}$, $R_{TH_1}=\qtys{R_TH_1_F}{2}{\Omega}$ et $R_{TH_2}=\qtys{R_TH_2_F}{2}{\Omega}$).
+		\item Déterminez alors le courant $i(t)$ circulant dans la bobine de $\qtys{L}{1}{H}$ pour $t\ge0$ en précisant bien les solutions homogène et particulière.
+		\item Pour un autre circuit RL en série non montré, la courbe de $i(t)$ obtenue au laboratoire est donnée plus loin. Quelles doivent être les valeurs de R et de L pour obtenir le graphe en question (utilisez les valeurs d'inductance qu'on retrouve au laboratoire, c'est-à-dire \qty{.05}{H}, \qty{.1}{H}, \qty{.15}{H}, \qty{.2}{H} ou \qty{.3}{H})?
+	\end{enumerate}}
+\begin{enumerate}
+	\item \begin{itemize}
+		      \begin{sagesilent}
+			      I_1 = var('I_1')
+			      I_2 = var('I_2')
+			      V_TH_1 = var('V_TH_1')
+			      R_TH_1 = var('R_TH_1')
+
+			      V_tr_KL = I_ind_LK * R_2
+
+			      LKC_I, _LKC_I = dexpr([I_1,I_2,I_ind_LK],[I_y])
+			      I_y_LKC = solve(LKC_I, I_y)[0].rhs()
+
+			      R, _R = matdexpr([[_dexpr([R_1,R_2]),_dexpr([R_2])],[_dexpr([R_2]),_dexpr([R_1,R_2])]])
+			      I = matrix([[I_1],[I_2]])
+			      V_MK = V_MK.subs(I_y = I_y_LKC)
+			      V_mat, _V_mat = matdexpr([[_dexpr([V_ind_LM,V_MK,-V_tr_KL])],[_dexpr([V,-V_tr_KL])]])
+			      I_rref, _I_rref, sol_I = prepare_rref_matrix(R, I, V_mat)
+
+			      I_f_TH, _I_f_TH = dexpr([sol_I[I_1]],[[V,MINUS,V_TH_1],DIV,[R_TH_1]])
+			      diff_I_f_TH = I_f_TH.lhs() - I_f_TH.rhs()
+			      coeff_V_expr, _coeff_V_expr = _dexpr([diff_I_f_TH.coefficient(V)],[0])
+			      R_TH_1 = solve(coeff_V_expr.lhs() == 0, R_TH_1)[0].rhs()
+
+			      coeff_const_expr, _coeff_const_expr = _dexpr([diff_I_f_TH.subs(V=0)],[0])
+			      coeff_const_expr = coeff_const_expr.subs(R_TH_1 = R_TH_1)
+			      V_TH_1 = solve(coeff_const_expr.lhs().subs(R_TH_1 = R_TH_1) == 0, V_TH_1)[0].rhs()
+		      \end{sagesilent}
+		      \item Le circuit jusqu'à A/B, après transformation de sources, devient le suivant:
+		            \sfig[.71]{\begin{tikzpicture}[thick]
+				            % Paths, nodes and wires:
+				            \draw (11, 5) to[american voltage source, l={$V$}] (11, 1);
+				            \draw (6, 5) to[american resistor, l={\nums{R_2}{0}}] (6, 3);
+				            \draw (6, 3) to[american voltage source, l={\qtys{V_tr_KL}{0}{V}}] (6, 1);
+				            \draw (3.5, 5) to[american controlled voltage source, mirror, l={$\sage{_V_MK}$}] (6, 5);
+				            \draw (1, 5) to[american voltage source, mirror, l={\qtys{V_ind_LM}{0}{V}}] (1, 1);
+				            \draw (1, 5) to[american resistor, l={\nums{R_1}{0}}] (3.5, 5);
+				            \draw (1, 1) -- (8, 1);
+				            \draw (6, 5) to[american resistor, l={\nums{R_1}{0}}] (11, 5);
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N1) at (11, 5){} node[anchor=south] at (N1.north){$\text{A}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N2) at (6, 1){} node[anchor=north] at (N2.south){$\text{L}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N3) at (6, 5){} node[anchor=south west] at (N3.north east){$\text{K}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N4) at (1, 5){} node[anchor=south east] at (N4.north west){$\text{M}$};
+				            \draw (8, 1) -- (11, 1);
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N5) at (11, 1){} node[anchor=north] at (N5.south){$\text{B}$};
+				            \node[circulator, xscale=-1, yscale=-1](N6) at (3.49, 3){} node[anchor=north] at (N6.text){$I_1$};
+				            \node[circulator, yscale=-1](N7) at (8.5, 3.01){} node[anchor=north] at (N7.text){$I_2$};
+			            \end{tikzpicture}
+		            }
+		      \item La LKC au point I dans le circuit original donne:
+		            \begin{gather*}
+			            \sage{_LKC_I}\Longrightarrow I_y=\sage{I_y_LKC}
+		            \end{gather*}
+		      \item On applique la loi des mailles:
+		            \begin{gather*}
+			            RI=V\Longrightarrow\sage{_R}\sage{I}=\sage{_V_mat}\\
+			            \Longrightarrow\sage{_I_rref}
+		            \end{gather*}
+		      \item Par le théorème de Thévenin, on sait que le courant peut être exprimé sous la forme suivante:
+		            \begin{gather*}
+			            I_1=\sage{_I_f_TH}\Longrightarrow\sage{I_f_TH}\\
+			            \Longrightarrow\sage{diff_I_f_TH}=0
+		            \end{gather*}
+		      \item Coefficient de V:
+		            \begin{gather*}
+			            \sage{_coeff_V_expr}\Longrightarrow\boxed{R_{TH_1}=\qtys{R_TH_1}{0}{\Omega}}
+		            \end{gather*}
+		      \item Constantes:
+		            \begin{gather*}
+			            \sage{_coeff_const_expr}\Longrightarrow\sage{coeff_const_expr}\Longrightarrow\boxed{V_{TH_1}=\qtys{V_TH_1}{0}{V}}
+		            \end{gather*}
+		      \item Le ciruit de droite du schéma original jusqu'à C/D devient, avec l'équivalent de Norton:
+		            \sfig[.8]{\begin{tikzpicture}[thick]
+				            % Paths, nodes and wires:
+				            \draw (1, 1) to[american current source, l_={$I$}] (1, 5);
+				            \draw (3, 5) |- (1, 5);
+				            \draw (3, 5) to[american resistor, l={$1$}] (3, 1);
+				            \draw (3, 1) |- (1, 1);
+				            \draw (3, 5) to[american resistor, l={$1$}] (6, 5);
+				            \draw (6, 5) to[american resistor, l={$1$}] (6, 1);
+				            \draw (3, 1) -- (6, 1);
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N1) at (3, 1){} node[anchor=north] at (N1.south){$\text{F}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N2) at (3, 5){} node[anchor=south] at (N2.north){$\text{E}$};
+				            \node[shape=rectangle, minimum width=0.465cm, minimum height=0.965cm] at (5, 3){} node[anchor=center, align=center, text width=0.077cm, inner sep=6pt] at (5, 3){$I_x$};
+				            \draw[-latex] (5.5, 3.5) -- (5.5, 2.5);
+				            \draw (6, 5) to[american resistor, l={$3$}] (9, 5);
+				            \draw (9, 5) to[american controlled voltage source, l_={$\sage{V_GH}$}] (9, 1);
+				            \draw (9, 1) -- (6, 1);
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N3) at (6, 1){} node[anchor=north] at (N3.south){$\text{H}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N4) at (6, 5){} node[anchor=south] at (N4.north){$\text{G}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N5) at (1, 1){} node[anchor=north] at (N5.south){$\text{D}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N6) at (1, 5){} node[anchor=south] at (N6.north){$\text{C}$};
+				            \node[shape=rectangle, minimum width=0.465cm, minimum height=1.465cm] at (0, 3){} node[anchor=center, align=center, text width=0.077cm, inner sep=6pt] at (0, 3){$+$ $V_1$ $-$};
+				            \node[shape=rectangle, minimum width=0.465cm, minimum height=1.465cm] at (9.657, 3){} node[anchor=center, align=center, text width=0.077cm, inner sep=6pt] at (9.657, 3){$+$ $V_2$ $-$};
+				            \node[ground] at (4.5, 1){};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm] at (4.5, 1){};
+				            \node[shape=rectangle, draw, dash pattern={on 1.6pt off 1.6pt}, minimum width=8.986cm, minimum height=1.986cm] at (5, 1){};
+				            \node[shape=rectangle, minimum width=1.715cm, minimum height=0.965cm] at (10.375, 1.25){} node[anchor=west, align=left, text width=1.327cm, inner sep=6pt] at (9.5, 1.25){Référence (0 V)};
+				            \node[shape=rectangle, draw, dash pattern={on 1.6pt off 1.6pt}, minimum width=3.486cm, minimum height=2.236cm] at (1.75, 5.375){} node[anchor=north west, align=left, text width=3.119cm, inner sep=5.4pt] at (0, 6.5){$V_A$};
+				            \node[shape=rectangle, draw, dash pattern={on 1.6pt off 1.6pt}, minimum width=1.486cm, minimum height=2.236cm] at (6, 5.375){} node[anchor=north, align=center, text width=1.119cm, inner sep=5.4pt] at (6, 6.5){$V_B$};
+			            \end{tikzpicture}}
+		            \newpage
+		      \item On peut le réarranger avec une transformation de la source de droite:
+		            \begin{sagesilent}
+			            I_tr_JI = V_GH / R_3
+		            \end{sagesilent}
+		            \sfig[.76]{\begin{tikzpicture}[thick]
+				            % Paths, nodes and wires:
+				            \node[shape=rectangle, draw, dash pattern={on 1.6pt off 1.6pt}, minimum width=9.986cm, minimum height=1.986cm] at (5.5, 1){};
+				            \draw (1, 1) to[american current source, l_={$I$}] (1, 5);
+				            \draw (3, 5) |- (1, 5);
+				            \draw (3, 5) to[american resistor, l={$1$}] (3, 1);
+				            \draw (3, 1) |- (1, 1);
+				            \draw (3, 5) to[american resistor, l={$1$}] (6, 5);
+				            \draw (6, 5) to[american resistor, l={$1$}] (6, 1);
+				            \draw (3, 1) -- (6, 1);
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N1) at (3, 1){} node[anchor=north] at (N1.south){$\text{F}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N2) at (3, 5){} node[anchor=south] at (N2.north){$\text{E}$};
+				            \node[shape=rectangle, minimum width=0.465cm, minimum height=0.965cm] at (5, 3){} node[anchor=center, align=center, text width=0.077cm, inner sep=6pt] at (5, 3){$I_x$};
+				            \draw[-latex] (5.5, 3.5) -- (5.5, 2.5);
+				            \draw (10, 1) -- (6, 1);
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N3) at (6, 1){} node[anchor=north] at (N3.south){$\text{H}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N4) at (1, 1){} node[anchor=north] at (N4.south){$\text{D}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N5) at (1, 5){} node[anchor=south] at (N5.north){$\text{C}$};
+				            \node[shape=rectangle, minimum width=0.465cm, minimum height=1.465cm] at (0, 3){} node[anchor=center, align=center, text width=0.077cm, inner sep=6pt] at (0, 3){$+$ $V_1$ $-$};
+				            \node[shape=rectangle, minimum width=0.465cm, minimum height=1.465cm] at (10.75, 3){} node[anchor=center, align=center, text width=0.077cm, inner sep=6pt] at (10.75, 3){$+$ $V_2$ $-$};
+				            \node[ground] at (4.5, 1){};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm] at (4.5, 1){};
+				            \node[shape=rectangle, minimum width=1.715cm, minimum height=0.965cm] at (11.375, 1.5){} node[anchor=west, align=left, text width=1.327cm, inner sep=6pt] at (10.5, 1.5){Référence (0 V)};
+				            \node[shape=rectangle, draw, dash pattern={on 1.6pt off 1.6pt}, minimum width=3.486cm, minimum height=2.236cm] at (1.75, 5.375){} node[anchor=north west, align=left, text width=3.119cm, inner sep=5.4pt] at (0, 6.5){$V_A$};
+				            \node[shape=rectangle, draw, dash pattern={on 1.6pt off 1.6pt}, minimum width=2.986cm, minimum height=2.236cm] at (7, 5.375){} node[anchor=north west, align=left, text width=2.619cm, inner sep=5.4pt] at (5.5, 6.5){$V_B$};
+				            \draw (10, 1) to[american controlled current source, l={$\sage{I_tr_JI}$}] (10, 5);
+				            \draw (8, 5) to[american resistor, l={$3$}] (8, 1);
+				            \draw (10, 5) -- (8, 5);
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N6) at (8, 1){} node[anchor=north] at (N6.south){$\text{J}$};
+				            \draw (6, 5) -- (8, 5);
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N7) at (8, 5){} node[anchor=south] at (N7.north){$\text{I}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N8) at (6, 5){} node[anchor=south] at (N8.north){$\text{G}$};
+			            \end{tikzpicture}}
+		            \begin{sagesilent}
+			            V_TH_2 = var('V_TH_2')
+			            R_TH_2 = var('R_TH_2')
+
+			            V_A = var('V_A')
+			            V_B = var('V_B')
+
+			            I = var('I')
+			            I_x_V_B = V_B / R_3
+
+			            G, _G = matdexpr([[_dexpr([1,DIV,R_1,1,DIV,R_1]),_dexpr([-1,DIV,R_1])],[_dexpr([-1,DIV,R_1]),_dexpr([1,DIV,R_1,1,DIV,R_1,1,DIV,3])]])
+			            V_mat = matrix([[V_A],[V_B]])
+			            I_mat, _I_mat = matdexpr([[I],[I_tr_JI]])
+
+			            I_mat = I_mat.subs(I_x = I_x_V_B)
+			            V_rref, _V_rref, sol_V = prepare_rref_matrix(G, V_mat, I_mat)
+
+			            I_V_A_TH, _I_V_A_TH = dexpr([solve(V_A == sol_V[V_A], I)[0].rhs()],[[V_A,PLUS,-V_TH_2],DIV,[R_TH_2]])
+
+			            diff_I_V_A_TH = I_V_A_TH.lhs() - I_V_A_TH.rhs()
+			            coeff_V_A_expr, _coeff_V_A_expr = _dexpr([diff_I_V_A_TH.coefficient(V_A)],[0])
+			            R_TH_2 = solve(coeff_V_A_expr.lhs() == 0, R_TH_2)[0].rhs()
+
+			            coeff_const_expr, _coeff_const_expr = _dexpr([diff_I_V_A_TH.subs(V_A=0)],[0])
+			            coeff_const_expr = coeff_const_expr.subs(R_TH_2 = R_TH_2)
+			            V_TH_2 = solve(coeff_const_expr.lhs().subs(R_TH_2 = R_TH_2) == 0, V_TH_2)[0].rhs()
+		            \end{sagesilent}
+		      \item On note que $V_1\equiv V_A$ et $V_2\equiv V_B$. On applique la loi des nœuds:
+		            \begin{gather*}
+			            GV=I\Longrightarrow\sage{_G}\sage{V_mat}=\sage{_I_mat}
+		            \end{gather*}
+		      \item Puisque $I_x=\sage{I_x_V_B}$:
+		            \begin{gather*}
+			            \Longrightarrow\sage{_V_rref}
+		            \end{gather*}
+		      \item En se basant sur $V_A$:
+		            \begin{gather*}
+			            V_A=\sage{sol_V[V_A]}\Longrightarrow I=\sage{_I_V_A_TH}\\
+			            \Longrightarrow\sage{diff_I_V_A_TH}=0
+		            \end{gather*}
+		      \item Coefficient de $V$:
+		            \begin{gather*}
+			            \sage{_coeff_V_A_expr}\Longrightarrow\boxed{R_{TH_2}=\qtys{R_TH_2}{2}{\Omega}}
+		            \end{gather*}
+		      \item Constantes:
+		            \begin{gather*}
+			            \sage{_coeff_const_expr}\Longrightarrow\boxed{V_{TH_2}=\qtys{V_TH_2}{0}{V}}
+		            \end{gather*}
+		      \item Le circuit de départ devient:\sage{set_rational_answers(False)}
+		            \sfig[.68]{\begin{tikzpicture}[thick]
+				            % Paths, nodes and wires:
+				            \draw (1, 4) to[american voltage source, l_={\qtys{V_TH_1}{0}{V}}] (1, 1);
+				            \draw (1, 4) to[american resistor, l={\qtys{R_TH_1}{0}{\Omega}}] (5, 4);
+				            \draw (5, 4) to[american inductor, l={\qtys{L}{1}{H}}] (9, 4);
+				            \draw (9, 4) to[american resistor, l={\qtys{R_TH_2}{2}{\Omega}}] (13, 4);
+				            \draw (1, 1) -- (13, 1) -- (13, 4);
+				            \draw[-latex] (6.5, 3.75) -- (7.5, 3.75);
+				            \node[shape=rectangle, minimum width=0.965cm, minimum height=0.465cm] at (7, 3.414){} node[anchor=center, align=center, text width=0.577cm, inner sep=6pt] at (7, 3.414){$I(t)$};
+			            \end{tikzpicture}}\sage{set_rational_answers(True)}
+	      \end{itemize}\newpage
+	\item Il s'agit d'un circuit du premier degré excité par une source continue:
+	      \begin{gather*}
+		      \boxed{i(t)=\underbrace{Ae^{-t/\tau}}_\text{sln. homogène}+\underbrace{\frac{Ye^{s_pt}}{Ls_p+R}}_\text{sln. particulière}\qquad(t\ge0)}
+	      \end{gather*}
+	\item Résolution:
+	      \begin{sagesilent}
+		      V_TH = var('V_TH')
+		      V_TH, _V_TH = dexpr([V_TH_1_F,V_TH_2_F])
+		      R_TH = var('R_TH')
+		      R_TH, _R_TH = dexpr([R_TH_1_F,R_TH_2_F])
+		      t = var('t')
+
+		      ## TODO
+		      i = svar('i', r"i(t)")
+		      i = function('i')(t)
+
+		      V_L = svar('V_L', r"v_L(t)")
+
+		      ct = svar('ct', r"\tau")
+		      ct, _ct = dexpr([[L],DIV,[R_TH]])
+
+		      LKT, _LKT = dexpr([[R_TH,i],V_L],[V_TH])
+
+		      s, _s = dexpr([DERIV(DIFF, i, t)])
+		      s_eq, _s_eq = dexpr([s],[NEG,R_TH,DIV,L])
+		      s_num = s_eq.rhs()
+
+		      V_L, _V_L = dexpr([[L,s]])
+		      LKT = LKT.subs(V_L = V_L)
+		      ec = LKT.lhs() == 0
+
+		      A = var('A')
+		      Y = var('Y')
+		      t = var('t')
+		      s_p = var('s_p')
+		      source_r, _source_r = dexpr([V_TH],[[Y,e,POW,[s_p,TIMES,t]]])
+		      i_expr_r, _i_expr_r = dexpr([[A,e,POW,[-t,DIV,ct]],source_r.rhs(),DIV,[L,s_p,PLUS,R_TH]])
+		      s_p = 0
+
+		      i_t_0 = svar('i_t_0', r"i(0^-)")
+		      i_t_0 = 0
+
+		      i_expr_s_p = i_expr_r.subs(s_p = s_p)
+
+		      i_expr_init, _i_expr_init = dexpr([i_t_0],[i_expr_s_p.subs(t = 0, s_p = s_p, Y = V_TH)])
+		      A = solve(i_expr_init, A)[0].rhs()
+		      Y = solve(source_r.subs(s_p = s_p), Y)[0].rhs()
+		      i_expr = i_expr_r.subs(Y = Y, A = A, s_p = s_p)
+	      \end{sagesilent}
+	      \begin{itemize}
+		      \item Selon les directives de l'énoncé, on a:
+		            \begin{gather*}
+			            V_{TH}=\sage{_V_TH}=\qtys{V_TH}{0}{V}\\
+			            R_{TH}=\sage{_R_TH}=\qtys{R_TH}{2}{\Omega}
+		            \end{gather*}
+		      \item Constante de temps ($\tau$):
+		            \begin{gather*}
+			            \boxed{\tau=\sage{_ct}=\qtys{ct}{3}{s}}
+		            \end{gather*}
+		      \item Par la loi des mailles, on obtient l'équation décrivant le circuit:
+		            \begin{gather*}
+			            \sage{_LKT}
+		            \end{gather*}
+		      \item La source peut être exprimée comme suit:
+		            \begin{gather*}
+			            \sage{_source_r}
+		            \end{gather*}
+		      \item On pose $s=\sage{_s}$. Or, $v_L(t)=\sage{_V_L}$. Ainsi, la LKT devient:
+		            \begin{gather*}
+			            \sage{LKT}
+		            \end{gather*}
+		      \item Le pôle $s$ est aussi défini par:
+		            \begin{gather*}
+			            \boxed{\sage{_s_eq}=\qtys{s_num}{2}{\invs}}
+		            \end{gather*}
+		      \item On trouve l'équation caractéristique:
+		            \begin{gather*}
+			            \boxed{\sage{ec}}
+		            \end{gather*}
+	      \end{itemize}
+	\item Résolution:
+	      \begin{itemize}
+		      \item On sait que la solution à ce problème en termes de courant est la suivante:
+		            \begin{gather*}
+			            i(t)=\sage{_i_expr_r}=\sage{i_expr_r}
+		            \end{gather*}
+		      \item On y substitue $s_p=\sage{s_p}$ (source continue):
+		            \begin{gather*}
+			            i(t)=\sage{i_expr_s_p}
+		            \end{gather*}
+		      \item Puisque l'on nous a donné une condition initiale $I(t)$ pour la bobine, on l'utilisera pour résoudre le reste du problème. De plus, puisque l'on est en présence d'une bobine, on sait que $i(0^+)=i(0^-)$, ce qui implique que:
+		            \begin{gather*}
+			            I(t)=\sage{i_expr_s_p}
+		            \end{gather*}
+		      \item Or, puisque la bobine n'est pas initialement chargée, on a $i(0^+)=i(0^-)=\qty{0}{A}$. On récrit l'équation en substituant aussi $\sage{source_r.rhs()}$ par $V_{TH}$:
+		            \begin{gather*}
+			            \sage{_i_expr_init}\Longrightarrow\boxed{A=\nums{A}{2}}
+		            \end{gather*}
+		      \item De plus, puisque $s_p=\sage{s_p}$, il devient plus facile de trouver $Y$:
+		            \begin{gather*}
+			            \sage{_source_r}\Longrightarrow\sage{source_r.subs(s_p = s_p)}\Longrightarrow\boxed{Y=\nums{Y}{0}}
+		            \end{gather*}
+		      \item Le courant en fonction du temps se résume donc finalement à l'équation suivante:
+		            \begin{gather*}
+			            i(t)=\sage{i_expr_r.subs(s_p = s_p)}\Longrightarrow\boxed{i(t)=\sage{i_expr}}
+		            \end{gather*}
+	      \end{itemize}
+\end{enumerate}
+\newpage
+\section*{Question 6}
+\begin{sagesilent}
+	t = var('t')
+	I_FE = 3 * cos(2*t)
+	I_ON = 2 * e^(-3*t)
+	I_IJ = 1
+	I_KJ = 1
+	V_GI = 2
+	V_ML = 9
+	Cap = svar('Cap', r"C")
+	Cap = 1
+\end{sagesilent}
+\questionenum{
+	Pour le circuit RC de la figure ci-dessous, les interrupteurs sont sur les positions indiquées depuis longtemps. À l'instant $t=0$, on ouvre les interrupteurs $a$ et $b$, et on ferme les interrupteurs $c$ et $d$ d'une façon instantanée. Les valeurs de toutes les résistances sont en $\Omega$. Le condensateur a une capacité de \qtys{Cap}{0}{F}.
+	\begin{figure}[h!]
+		\centering
+		\linespread{1}
+		\scalebox{.9}{\begin{tikzpicture}[thick]
+				% Paths, nodes and wires:
+				\draw (7.007, 4.99) to[capacitor] (11.005, 4.99);
+				\draw (16, 0.99) -- (18, 0.99);
+				\draw (16, 4.99) -- (18, 4.99);
+				\draw (14, 0.99) -- (16, 0.99);
+				\draw (16, 4.99) to[american resistor, l_={$1$}] (16, 0.99);
+				\draw (14, 4.99) to[american resistor, l={$1$}] (16, 4.99);
+				\draw (14, 0.99) -- (3.007, 0.99);
+				\draw (11.005, 4.99) to[closing switch, l={$d$}] (14, 4.99);
+				\draw (3.007, 4.99) to[american resistor, l={$1$}] (5.008, 4.99);
+				\draw (0.007, 4.99) to[american resistor, l_={$1$}] (0.007, 0.99);
+				\draw (0.007, 4.99) -- (3.007, 4.99);
+				\draw (0.007, 0.99) -- (3.007, 0.99);
+				\draw (3.007, 0.99) to[american current source, l_={$\sage{I_FE}$}] (3.007, 4.99);
+				\node[shape=rectangle, minimum width=0.965cm, minimum height=1.965cm] at (0.758, 2.99){} node[anchor=center, align=center, text width=0.577cm, inner sep=6pt] at (0.758, 2.99){$+$ $V_X(t)$ $-$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N1) at (3.007, 4.99){} node[anchor=south] at (N1.north){$\text{E}$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N2) at (3.007, 0.99){} node[anchor=north] at (N2.south){$\text{F}$};
+				\draw (5.008, 4.99) to[closing switch, l={$c$}] (7.007, 4.99);
+				\node[shape=rectangle, minimum width=1.965cm, minimum height=0.465cm] at (6.008, 4.74){} node[anchor=center, align=center, text width=1.577cm, inner sep=6pt] at (6.008, 4.74){$t=0$};
+				\draw (7.007, 4.99) to[opening switch, l={$a$}] (7.007, 6.99);
+				\node[shape=rectangle, minimum width=1.965cm, minimum height=0.465cm] at (9, 5.99){} node[anchor=center, align=center, text width=1.577cm, inner sep=6pt] at (9, 5.99){$t=0$};
+				\draw (7.007, 6.99) to[american resistor, l={$1$}] (7.007, 8.99);
+				\draw (7.007, 8.99) to[american voltage source, invert, l={\qtys{V_GI}{0}{V}}] (7.007, 10.99);
+				\draw (7.007, 10.99) to[american resistor, l_={$1$}] (11, 10.99);
+				\draw (11, 10.99) to[american resistor, l={$1$}] (11, 7.99);
+				\draw (11, 4.995) to[opening switch, mirror, l_={$b$}] (11, 6.995);
+				\draw (11, 7.99) -| (11, 6.99);
+				\draw (11, 10.99) -- (13, 10.99);
+				\draw (13, 7.99) to[american current source, l_={\qtys{I_IJ}{0}{A}}] (13, 10.99);
+				\draw (11, 7.99) -- (13, 7.99);
+				\draw (7.007, 12.99) to[american current source, l={\qtys{I_KJ}{0}{A}}] (11, 12.99);
+				\draw (7.007, 10.99) -- (7.007, 12.99);
+				\draw (11, 10.99) -- (11, 12.99);
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N3) at (7.007, 4.99){} node[anchor=north west] at (N3.south east){$\text{G}$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N4) at (11, 4.995){} node[anchor=north east] at (N4.south west){$\text{H}$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N5) at (7.007, 10.99){} node[anchor=east] at (N5.west){$\text{I}$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N6) at (11, 10.99){} node[anchor=south west] at (N6.north east){$\text{J}$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N7) at (11, 7.99){} node[anchor=east] at (N7.west){$\text{K}$};
+				\node[shape=rectangle, minimum width=1.965cm, minimum height=0.465cm] at (12.5, 4.74){} node[anchor=center, align=center, text width=1.577cm, inner sep=6pt] at (12.5, 4.74){$t=0$};
+				\draw (14, 2.99) to[american voltage source, invert, l={$\qtys{V_ML}{0}{V}$}] (14, 4.99);
+				\draw (14, 0.99) to[american resistor, l={$1$}] (14, 2.99);
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N8) at (14, 4.99){} node[anchor=south] at (N8.north){$\text{L}$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N9) at (14, 0.99){} node[anchor=north] at (N9.south){$\text{M}$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N10) at (16, 4.99){} node[anchor=south] at (N10.north){$\text{N}$};
+				\node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N11) at (16, 0.99){} node[anchor=north] at (N11.south){$\text{O}$};
+				\draw (18, 0.99) to[american current source, l_={$\sage{I_ON}$}] (18, 4.99);
+				\node[shape=rectangle, minimum width=2.965cm, minimum height=0.465cm] at (9, 4){} node[anchor=center, align=center, text width=2.577cm, inner sep=6pt] at (9, 4){$+$ $V_C(t)$ $-$};
+			\end{tikzpicture}}
+		\caption{Circuit RC.}
+	\end{figure}
+	\begin{enumerate}
+		\item Donnez la valeur de la tension $V_C(t)$ à l'instant $t=0^-$.
+		\item Donnez l'expression mathématique de la réponse $V_C(t)$ à des constantes près pour $t\ge0$.
+		\item Donnez la valeur de la constante de temps, le pôle et l'équation caractéristique du circuit pour $t\ge0$.
+		\item Déterminez la tension $V_C(t)$ aux bornes du condensateur pour $t\ge0$ (on vous suggère de faire des transformations successives de sources réelles en premier lieu).
+		\item Déterminez la tension $V_X(t)$ aux bornes de la résistance de \qty{1}{\Omega} pour $t\ge0$.
+	\end{enumerate}}
+\begin{enumerate}
+	\item \begin{itemize}
+		      \begin{sagesilent}
+			      R_1 = 1
+			      R_2 = 2
+			      V_tr_IJ = svar('V_tr_IJ', r"V_{IJ}")
+			      V_tr_KJ = svar('V_tr_KJ', r"V_{KJ}")
+			      V_tr_IJ = R_1 * I_IJ
+			      V_tr_KJ = R_1 * I_KJ
+
+			      V_tot = svar('V_tot', r"V_C(0^-)")
+			      V_tot, _V_tot = dexpr([V_GI,V_tr_IJ,-V_tr_KJ])
+
+			      V_G = I_FE
+			      V_D = I_ON
+		      \end{sagesilent}
+		      \item À $t=0^-$, on est en régime permanent, ce qui fait en sorte que le condensateur se comporte comme un circuit ouvert. De plus, puisque les interrupteurs $c$ et $d$ ne sont pas fermés, on peut ignorer la portion du bas du circuit. Celui-ci devient alors ce qui est représenté sur le schéma ci-après.\newpage
+		            \sfig[.8]{\begin{tikzpicture}[thick]
+				            % Paths, nodes and wires:
+				            \draw (0, 4) to[american voltage source, l={\qtys{V_GI}{0}{V}}] (0, -0);
+				            \node[ocirc] at (0, -0){};
+				            \draw (0, 4) to[american resistor, l_={$1$}] (3.993, 4);
+				            \draw (3.993, 4) to[american resistor, l={$1$}] (3.993, 1);
+				            \draw (3.993, 4) -- (5.993, 4);
+				            \draw (5.993, 1) to[american current source, l_={\qtys{I_IJ}{0}{A}}] (5.993, 4);
+				            \draw (3.993, 1) -- (5.993, 1);
+				            \draw (0, 6) to[american current source, l={\qtys{I_KJ}{0}{A}}] (3.993, 6);
+				            \draw (0, 4) -- (0, 6);
+				            \draw (3.993, 4) -- (3.993, 6);
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N1) at (0, 4){} node[anchor=east] at (N1.west){$\text{I}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N2) at (3.993, 4){} node[anchor=south west] at (N2.north east){$\text{J}$};
+				            \draw (3.993, 1) |- (4, -0);
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N3) at (3.993, 1){} node[anchor=east] at (N3.west){$\text{K}$};
+				            \node[ocirc] at (3.993, -0){};
+			            \end{tikzpicture}}
+		      \item On peut effectuer une transformation de sources pour n'obtenir que des sources de tension:
+		            \sfig[.8]{\begin{tikzpicture}[thick]
+				            % Paths, nodes and wires:
+				            \draw (4, 1) to[american voltage source, invert, l={\qtys{V_tr_IJ}{0}{V}}] (4, 3);
+				            \draw (0, 5) to[american voltage source, invert, l={\qtys{V_tr_KJ}{0}{V}}] (2, 5);
+				            \draw (2, 5) to[american resistor, l_={$1$}] (4, 5);
+				            \draw (0, 5) to[american voltage source, l_={$\text{2 V}$}] (0, -0);
+				            \node[ocirc] at (0, -0){};
+				            \draw (3.993, 5) to[american resistor, l={$1$}] (4, 3);
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N1) at (0, 5){} node[anchor=east] at (N1.west){$\text{I}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N2) at (3.993, 5){} node[anchor=south west] at (N2.north east){$\text{J}$};
+				            \draw (3.993, 1) |- (4, -0);
+				            \node[ocirc] at (3.993, -0){};
+			            \end{tikzpicture}}
+		      \item Puisque la boucle n'est pas fermée, aucun courant ne peut circuler dans le circuit. On peut alors ignorer les résistances dans le calcul de la tension entre les deux points du bas ($RI=R(0)=0$) et additionner simplement les différences de potentiel pour chaque source du haut:
+		            \begin{gather*}
+			            \boxed{V_C(0^-)=\sage{_V_tot}=\qtys{V_tot}{0}{V}}
+		            \end{gather*}
+	      \end{itemize}
+	\item On effectue une transformation de sources pour le circuit du bas (celui du haut n'est plus connecté):
+	      \sfig[.85]{\begin{tikzpicture}[thick]
+			      % Paths, nodes and wires:
+			      \draw (0, -0) -| (7.992, 0.01);
+			      \draw (4, 4) to[capacitor] (7.998, 4);
+			      \draw (7.992, 0.01) -| (11.993, 0.01);
+			      \draw (7.993, 4.01) to[american resistor, l={$2$}] (11.992, 4.01);
+			      \draw (0, 4) to[american resistor, l={$2$}] (4, 4);
+			      \draw (7.993, 2.01) to[american voltage source, invert, l={\qtys{V_ML}{0}{V}}] (7.993, 4.01);
+			      \draw (7.993, 0.01) to[american resistor, l={$1$}] (7.993, 2.01);
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N1) at (7.993, 4.01){} node[anchor=south] at (N1.north){$\text{L}$};
+			      \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N2) at (7.993, 0.01){} node[anchor=north] at (N2.south){$\text{M}$};
+			      \node[shape=rectangle, minimum width=2.965cm, minimum height=0.465cm] at (5.992, 5.01){} node[anchor=center, align=center, text width=2.577cm, inner sep=6pt] at (5.992, 5.01){$+$ $V_C(t)$ $-$};
+			      \draw (0, -0) to[american voltage source, invert, l_={$\sage{V_G}$}] (0, 4);
+			      \draw (11.992, 0.01) to[american voltage source, invert, l_={$\sage{V_D}$}] (11.992, 4.01);
+		      \end{tikzpicture}}
+	      \begin{sagesilent}
+		      A = var('A')
+		      B = var('B')
+		      C = var('C')
+		      D = var('D')
+		      t = var('t')
+		      ct = svar('ct', r"\tau")
+		      th = svar('th', r"\theta")
+
+		      V, _V = dexpr([[A,e,POW,[-t,DIV,ct]],B,[C,e,POW,[-2,t]],[D,cos(t+th)]])
+		      R_G_par_R_M = svar('R_G_par_R_M', r"R_G\parallelsum R_M")
+		      R_G_par_R_M = compute_parallel_resistance([R_2,R_1])
+		      R_eq = svar('R_eq', r"R_\text{éq.}")
+		      R_eq, _R_eq = dexpr([R_G_par_R_M,R_2])
+
+		      ct, _ct = dexpr([[R_eq,Cap]])
+		      s = var('s')
+		      s_num, _s_num = dexpr([-1,DIV,[R_eq,Cap]])
+
+		      ec, _ec = dexpr([[R_eq,Cap,s],1],[0])
+	      \end{sagesilent}
+
+	      C'est un système du premier degré. Pour un tel système, et pour $t\ge0$, la tension $V_C(t)$ est donnée par:
+	      \begin{gather*}
+		      \boxed{V_C(t)=\sage{_V}}
+	      \end{gather*}
+	\item
+	      \begin{itemize}
+		      \item On calcule la résistance équivalente du circuit ($R_G$: résistance de gauche; $R_M$: résistance du milieu; $R_D$: résistance de droite):
+		            \begin{gather*}
+			            R_\text{éq}=\sage{_R_eq}=\sage{R_eq}
+		            \end{gather*}
+		      \item Constante de temps:
+		            \begin{gather*}
+			            \boxed{\tau=\sage{_ct}=\qtys{ct}{2}{s}}
+		            \end{gather*}
+		      \item Pôle:
+		            \begin{gather*}
+			            \boxed{s=\sage{_s_num}=\qtys{s_num}{2}{\invs}}
+		            \end{gather*}
+		      \item Équation caractéristique:
+		            \begin{gather*}
+			            \sage{_ec}\Longrightarrow\boxed{\sage{ec}}
+		            \end{gather*}
+	      \end{itemize}
+	\item La partie à droite du condensateur du circuit peut être transformée successivement de la manière suivante:
+	      \begin{sagesilent}
+		      V_comb = svar('V_comb', r"V_\text{comb.}")
+		      R_comb = svar('R_comb', r"R_\text{comb.}")
+		      t = var('t')
+		      Y = var('Y')
+		      s_p = var('s_p')
+		      I_t = svar('I_t', r"I(t)")
+		      V_C_t = svar('V_C_t', r"V_C(t)")
+		      V_C_t = function('V_C_t', latex_name=r"V_C ")(t)
+
+		      I_ML = V_ML
+
+		      I_U = I_ML + I_ON
+		      R_eq = compute_parallel_resistance([R_1,R_2])
+		      V_U = R_eq * I_U
+
+		      V_comb_r = V_U - V_G
+		      R_comb = R_eq + R_2
+
+		      V_comb = V_comb_r.exponentialize()
+
+		      LKT, _LKT = dexpr([V_C_t,[R_comb,I_t]],[V_comb])
+		      I_t, _I_t = dexpr([[Cap,DERIV(DIFF,V_C_t, t)]])
+		      LKT_D, _LKT_D = dexpr([LKT.lhs().subs(I_t = I_t)],[LKT.rhs()])
+
+		      V_C_t_expr, _V_C_t_expr = dexpr([[A,e,POW,[-t,DIV,ct]],[[Y,e,POW,[s_p,t]],DIV,[R_comb,Cap,s_p,PLUS,1]]])
+		      liste_Y, liste_s_p = extract_parameters_Y_s_p(LKT_D.rhs())
+	      \end{sagesilent}
+	      \input{q6_calcul_sln_part.tex}
+	      \begin{sagesilent}
+		      sln_part_expr, _sln_part_expr = dexpr(sln_part)
+		      V_C_t_sln_part = V_C_t_expr.subs(Y=0) + sln_part_expr
+
+		      V_C_t_cond_init_expr, _V_C_t_cond_init_expr = dexpr([V_tot],[V_C_t_sln_part.subs(t=0)])
+		      A = solve(V_C_t_cond_init_expr, A)[0].rhs()
+
+		      V_C_t_f = V_C_t_sln_part.subs(A=A)
+	      \end{sagesilent}
+	      \begin{itemize}
+		      \item Transformation de sources:
+		            \sfig[.8]{\begin{tikzpicture}[thick]
+				            % Paths, nodes and wires:
+				            \draw (4, 0) -| (8, -0);
+				            \draw (6, -0) to[american resistor, l={$2$}] (6, 4);
+				            \draw (4, -0) to[american resistor, l={$1$}] (4, 4);
+				            \draw (2, -0) -- (0, -0);
+				            \draw (2, 4) -- (0, 4);
+				            \node[ocirc] at (0, 4){};
+				            \node[ocirc] at (0, -0){};
+				            \draw (2, -0) to[american current source, l={$\qtys{I_ML}{0}{A}$}] (2, 4);
+				            \draw (2, 4) -- (4, 4);
+				            \draw (4, -0) -- (2, -0);
+				            \draw (4, 4) -- (8, 4);
+				            \draw (8, -0) to[american current source, l_={$\sage{I_ON}$}] (8, 4);
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N1) at (2, 4){} node[anchor=south] at (N1.north){$\text{A}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N2) at (2, -0){} node[anchor=north] at (N2.south){$\text{B}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N3) at (4, -0){} node[anchor=north] at (N3.south){$\text{D}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N4) at (6, -0){} node[anchor=north] at (N4.south){$\text{F}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N5) at (4, 4){} node[anchor=south] at (N5.north){$\text{C}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N6) at (6, 4){} node[anchor=south] at (N6.north){$\text{E}$};
+			            \end{tikzpicture}}
+		      \item Les sources de courant en parallèle s'additionnent, et l'on peut trouver la résistance équivalente avec la méthode usuelle. Unification:
+		            \sfig[.8]{\begin{tikzpicture}[thick]
+				            % Paths, nodes and wires:
+				            \draw (0, -0) -- (4, -0);
+				            \draw (2, -0) to[american resistor, l={$\sage{R_eq}$}] (2, 4);
+				            \node[ocirc] at (0, 4){};
+				            \node[ocirc] at (0, -0){};
+				            \draw (0, 4) -- (4, 4);
+				            \draw (4, -0) to[american current source, l_={$\:\sage{I_U}$}, label distance=-0.12cm] (4, 4);
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N1) at (2, -0){} node[anchor=north] at (N1.south){$\text{F}$};
+				            \node[shape=circle, fill={rgb,255:red,255;green,255;blue,255}, draw, minimum width=0.236cm](N2) at (2, 4){} node[anchor=south] at (N2.north){$\text{E}$};
+			            \end{tikzpicture}}
+		            \newpage
+		      \item Circuit équivalent selon la tension:
+		            \sfig[.8]{\begin{tikzpicture}[thick]
+				            % Paths, nodes and wires:
+				            \draw (0, -0) -- (4, -0);
+				            \draw (0, 4) to[american resistor, l={$\sage{R_eq}$}] (4, 4);
+				            \node[ocirc] at (0, 4){};
+				            \node[ocirc] at (0, -0){};
+				            \draw (4, -0) to[american voltage source, invert, l={$\sage{V_U}$}] (4, 4);
+			            \end{tikzpicture}}
+	      \end{itemize}
+	      On combine ensuite cela à la partie gauche du circuit:
+	      \begin{itemize}
+		      \item En additionnant les résistances et les différences de potentiel, on obtient:
+		            \sfig[.8]{\begin{tikzpicture}[thick]
+				            % Paths, nodes and wires:
+				            \draw (0, -0) -- (4, -0);
+				            \draw (0, 4) to[american resistor, l={$\sage{R_comb}$}] (4, 4);
+				            \draw (4, -0) to[american voltage source, invert, l_={$\sage{V_comb_r}$}] (4, 4);
+				            \draw (0, -0) to[capacitor] (0, 4);
+				            \node[shape=rectangle, minimum width=1.215cm, minimum height=1.465cm] at (-1.125, 2){} node[anchor=center, align=center, text width=0.827cm, inner sep=6pt] at (-1.125, 2){$+$ $V_C(t)$ $-$};
+			            \end{tikzpicture}}
+		      \item La source de tension peut être exprimée selon son équivalent complexe (ici, $i\equiv j$ et ne représente pas un courant):
+		            \begin{gather*}
+			            V=\sage{V_comb}
+		            \end{gather*}
+		      \item On applique la LKT dans le circuit:
+		            \begin{gather*}
+			            \sage{_LKT}
+		            \end{gather*}
+		      \item On peut alors obtenir une équation différentielle en changeant l'expression du courant $I(t)$:
+		            \begin{gather*}
+			            I(t)=\sage{_I_t}\\
+			            \Longrightarrow\boxed{\sage{_LKT_D}}
+		            \end{gather*}
+		      \item Pour $t\ge0$, on a que:
+		            \begin{gather*}
+			            V_C(t)=\sage{_V_C_t_expr}=\boxed{\sage{V_C_t_expr}}
+		            \end{gather*}
+		      \item En remplaçant les termes $Ye^{s_pt}$ pour chaque solution particulière (les membres de droite du côté droit de l'équation différentielle plus haut), on obtient:
+		            \begin{gather*}
+			            \boxed{V_C(t)=\sage{V_C_t_sln_part}}\\
+		            \end{gather*}
+		      \item Or, $V_C(0^-)=V_C(0^+)$:
+		            \begin{gather*}
+			            \sage{_V_C_t_cond_init_expr}\Longrightarrow\boxed{A=\sage{A}}
+		            \end{gather*}
+		      \item $V_C(t)$ équivaut donc à l'expression suivante:
+		            \begin{gather*}
+			            \boxed{V_C(t)=\sage{V_C_t_f}}
+		            \end{gather*}
+	      \end{itemize}
+	      \begin{sagesilent}
+		      V_x = var('V_x')
+		      LKC, _LKC = dexpr([V_x,DIV,R_1,I_FE],[I_t])
+		      V_x = solve(LKC, V_x)[0].rhs()
+	      \end{sagesilent}
+	\item LKC dans le circuit original:
+	      \begin{gather*}
+		      \sage{_LKC}\Longrightarrow\boxed{V_x=\sage{V_x}}
+	      \end{gather*}
+\end{enumerate}
+\newpage
+\section*{Question 7}
+\begin{sagesilent}
+	t = var('t')
+	w_s = svar('w_s', r"\omega_s")
+	R_1 = 1
+	R_2 =2
+	R = var('R')
+	s = var('s')
+	D = var('D')
+	th = svar('th', r"\theta")
+
+	V_C_0_p = svar('V_C_0_p', r"V_C(0^+)")
+	V_C_0_p = 1
+	I_0_p = svar('I_0_p', r"I(0^+)")
+	I_0_p = QQ(0.5)
+	I_BA = 2
+	L = 1
+	Cap = svar('Cap', r"C")
+	Cap = 1/13
+	V_EF = 2 * sin(w_s * t)
+
+	R_F_1 = 4
+	R_F_2 = 6
+	w_s_F_1 = 3
+	w_s_F_2 = sqrt(13)
+\end{sagesilent}
+\questionenum{
+	Pour le circuit RLC de la figure ci-dessous, les deux sources sont appliquées à l'instant $t=\qty{0}{s}$. Les valeurs de toutes les résistances sont en $\Omega$ et les conditions initiales sont données par $V_C(0^+)=\qtys{V_C_0_p}{0}{V}$ et $I(0^+)=\qtys{I_0_p}{1}{A}$.
+	\begin{figure}[h!]
+		\centering
+		\linespread{1}
+		\scalebox{0.85}{\begin{tikzpicture}[thick]
+				% Paths, nodes and wires:
+				\draw (0, -0) to[american resistor, l={$1$}] (0, 4);
+				\draw (3, -0) to[american current source, l={$\qtys{I_BA}{0}{A}$}] (3, 4);
+				\draw (0, 4) -- (3, 4);
+				\draw (0, -0) -- (3, -0);
+				\draw (3, 4) to[american resistor, l={$1$}] (6, 4);
+				\draw (6, 4) to[american resistor, l={$2$}] (6, -0);
+				\draw (3, -0) -- (6, -0);
+				\draw (6, 4) to[american inductor, l={$\qtys{L}{0}{H}$}] (9, 4);
+				\draw (9, 4) to[capacitor, l={$\sage{Cap}\units{F}$}] (12, 4);
+				\draw (12, 4) to[american resistor, l={$R$}] (15, 4);
+				\draw (15, 4) to[american resistor, l={2}] (15, -0);
+				\draw (15, 4) to[american resistor, l={2}] (18, 4);
+				\draw (18, 4) to[american voltage source, invert, l={$\sage{V_EF}$}] (18, -0);
+				\draw (18, -0) |- (6, -0);
+				\node[shape=circle, fill={rgb,255:red,252;green,255;blue,255}, draw={rgb,255:red,0;green,0;blue,0}, minimum width=0.236cm](N1) at (3, 4){} node[anchor=south] at (N1.north){$\text{A}$};
+				\node[shape=circle, fill={rgb,255:red,252;green,255;blue,255}, draw={rgb,255:red,0;green,0;blue,0}, minimum width=0.236cm](N2) at (3, -0){} node[anchor=north] at (N2.south){$\text{B}$};
+				\node[shape=circle, fill={rgb,255:red,252;green,255;blue,255}, draw={rgb,255:red,0;green,0;blue,0}, minimum width=0.236cm](N3) at (6, -0){} node[anchor=north] at (N3.south){$\text{D}$};
+				\node[shape=circle, fill={rgb,255:red,252;green,255;blue,255}, draw={rgb,255:red,0;green,0;blue,0}, minimum width=0.236cm](N4) at (6, 4){} node[anchor=south] at (N4.north){$\text{C}$};
+				\node[shape=circle, fill={rgb,255:red,252;green,255;blue,255}, draw={rgb,255:red,0;green,0;blue,0}, minimum width=0.236cm](N5) at (15, 4){} node[anchor=south] at (N5.north){$\text{E}$};
+				\node[shape=circle, fill={rgb,255:red,252;green,255;blue,255}, draw={rgb,255:red,0;green,0;blue,0}, minimum width=0.236cm](N6) at (15, -0){} node[anchor=north] at (N6.south){$\text{F}$};
+				\node[shape=rectangle, minimum width=2.215cm, minimum height=0.715cm] at (10.5, 3.125){} node[anchor=center, align=center, text width=1.827cm, inner sep=6pt] at (10.5, 3.125){$+$ $V_C(t)$ $-$};
+				\draw[-latex] (6.75, 3.5) -- (8.25, 3.5);
+				\node[shape=rectangle, minimum width=2.215cm, minimum height=0.715cm] at (7.5, 3.125){} node[anchor=center, align=center, text width=1.827cm, inner sep=6pt] at (7.5, 3.125){$I(t)$};
+				\draw[latex-] (12.75, 3.5) -- (14.25, 3.5);
+				\node[shape=rectangle, minimum width=2.215cm, minimum height=0.715cm] at (13.5, 3.125){} node[anchor=center, align=center, text width=1.827cm, inner sep=6pt] at (13.5, 3.125){$I_X(t)$};
+			\end{tikzpicture}}
+		\caption{Circuit RLC.}
+	\end{figure}
+	\begin{enumerate}
+		\item Donnez l'expression mathématique de la tension $V_C(t)$ aux bornes du condensateur à des constantes près pour $t\ge0$.
+		\item Déterminez l'équation caractéristique du circuit en fonction de $R$.
+		\item Déterminez les pôles du système pour $t\ge0$ quand $R=\qtys{R_F_1}{0}{\Omega}$ et $R=\qtys{R_F_2}{0}{\Omega}$.
+		\item Pour $R=\qtys{R_F_1}{0}{\Omega}$ et $\omega_s=\qtys{w_s_F_1}{0}{rad/s}$, déterminez la tension $V_C(t)$ aux bornes du condensateur et le courant $I_X(t)$ dans la résistance de \qty{2}{\Omega} pour $t\ge0$.
+		\item Pour $R=\qtys{R_F_1}{0}{\Omega}$ et $\omega_s=\qtys{w_s_F_2}{2}{rad/s}$, déterminez la tension $V_C(t)$ aux bornes du condensateur en régime permanent.
+	\end{enumerate}
+}
+\begin{enumerate}
+	\item Nous sommes en présence de deux éléments dynamiques de nature différente. Il s'agit d'un circuit du deuxième ordre. De fait, pour $t\ge0$, son analyse peut donner l'un des trois cas suivants:
+	      \begin{itemize}
+		      \item $V_C(t)=\underbrace{A_1e^{s_1t}+A_2e^{s_2t}}_\text{sln. homogène}+\underbrace{B+C\cos{(\omega_st+\alpha)}}_\text{sln. particulière}$
+		      \item $V_C(t)=\underbrace{A_3e^{s_1t}+A_4e^{s_1t}}_\text{sln. homogène}+\underbrace{B+C\cos{(\omega_st+\alpha)}}_\text{sln. particulière}$
+		      \item $V_C(t)=\underbrace{De^{-\alpha t}\cos{\prb{\omega_pt+\theta}}}_\text{sln. homogène}+\underbrace{B+C\cos{(\omega_st+\alpha)}}_\text{sln. particulière}$
+	      \end{itemize}
+	      \begin{sagesilent}
+		      R_2_par_R_2 = svar('R_2_par_R_2', r"R_2\parallelsum R_2")
+		      R_2_par_R_2 = compute_parallel_resistance([R_2,R_2])
+		      R_eq = svar('R_eq', r"R_\text{éq.}")
+		      R_eq, _R_eq = dexpr([[2,R_2_par_R_2],R])
+
+		      ec, _ec = dexpr([[L,Cap,s,POW,2],[R_eq,Cap,s],1],[0])
+	      \end{sagesilent}
+	\item \begin{itemize}
+		      \item Calcul de la résistance équivalente en ignorant les sources:
+		            \begin{gather*}
+			            \sage{_R_eq}=\sage{R_eq}
+		            \end{gather*}
+		      \item L'équation caractéristique est donc:
+		            \begin{gather*}
+			            \sage{_ec}\\
+			            \Longrightarrow\boxed{\sage{ec}}
+		            \end{gather*}
+	      \end{itemize}
+	      \begin{sagesilent}
+		      eq_s_R_F_1 = ec.subs(R = R_F_1)
+		      eq_s_R_F_2 = ec.subs(R = R_F_2)
+
+		      s_1_1 = solve(eq_s_R_F_1, s)[0].rhs()
+		      s_2_1 = solve(eq_s_R_F_1, s)[1].rhs()
+
+		      s_1_2 = solve(eq_s_R_F_2, s)[0].rhs()
+		      s_2_2 = solve(eq_s_R_F_2, s)[1].rhs()
+	      \end{sagesilent}
+	\item \begin{itemize}
+		      \item Pour $R\equiv R_F=\qtys{R_F_1}{0}{\Omega}$:
+		            \begin{gather*}
+			            \sage{eq_s_R_F_1}\Longrightarrow\boxed{s_{1,2}=\begin{cases}\sage{s_1_1}\\\sage{s_2_1}\end{cases}}
+		            \end{gather*}
+		      \item Pour $R=\qtys{R_F_2}{0}{\Omega}$:
+		            \begin{gather*}
+			            \sage{eq_s_R_F_2}\Longrightarrow\boxed{s_{1,2}=\begin{cases}\sage{s_1_2}\\\sage{s_2_2}\end{cases}}
+		            \end{gather*}
+	      \end{itemize}
+	      \begin{sagesilent}
+		      R_F = R_F_1
+		      w_s_F = w_s_F_1
+		      V_EF = V_EF.subs(w_s = w_s_F)
+
+		      a = svar('a', r"\alpha")
+		      a = -s_1_1.real_part()
+		      w_p = svar('w_p', r"\omega_p")
+		      w_p = abs(s_1_1.imag_part())
+
+		      V_C_R_t = D * e^(-a*t) * cos(w_p*t + th)
+
+		      V_BA = I_BA
+		      V_div_tens_G = V_BA * R_2 / (R_2 + R_2)
+		      R_th_G = compute_parallel_resistance([R_2,R_2])
+
+		      V_div_tens_D = V_EF * R_2 / (R_2 + R_2)
+		      R_th_comb_D, _R_th_comb_D = dexpr([compute_parallel_resistance([R_2,R_2]),R_F])
+
+		      R_tot = R_th_G + R_th_comb_D
+		      V_tot_r = V_div_tens_G + V_div_tens_D
+		      V_tot = V_tot_r.exponentialize()
+
+		      liste_Y, liste_s_p = extract_parameters_Y_s_p(V_tot)
+	      \end{sagesilent}
+	      \input{q7_calcul_sln_part.tex}
+	      \begin{sagesilent}
+		      sln_part_expr, _ = dexpr(sln_part)
+		      V_C_t_ang = V_C_R_t + sln_part_expr
+	      \end{sagesilent}
+	\item \begin{itemize}
+		      \item Pour $R=\qtys{R_F}{0}{\Omega}$, $s_{1,2}=\begin{cases}\sage{s_1_1}\\\sage{s_2_1}\end{cases}$. On a alors $\alpha=\sage{a}$ et $\omega_p=\sage{w_p}$. Ainsi:
+		            \begin{gather*}
+			            V_{CR}(t)=\sage{V_C_R_t}
+		            \end{gather*}
+		      \item Après avoir effectué des transformations de sources successives dans le circuit, ce dernier devient:
+		            \sfig[.85]{\begin{tikzpicture}[thick]
+				            % Paths, nodes and wires:
+				            \draw (-0, 4) to[american resistor, l={$\sage{R_th_G}$}] (3, 4);
+				            \draw (-0, -0) -- (12, -0);
+				            \draw (3, 4) to[american inductor, l={\qtys{L}{0}{H}}] (6, 4);
+				            \draw (6, 4) to[capacitor, l={$\sage{Cap}\units{F}$}] (9, 4);
+				            \draw (9, 4) to[american resistor, l={$\sage{_R_th_comb_D}=\sage{R_th_comb_D}$}] (12, 4);
+				            \draw (12, 4) to[american voltage source, invert, l={$\sage{V_div_tens_D}$}] (12, 0);
+				            \node[shape=rectangle, minimum width=2.215cm, minimum height=0.715cm] at (7.5, 3.125){} node[anchor=center, align=center, text width=1.827cm, inner sep=6pt] at (7.5, 3.125){$+$ $V_C(t)$ $-$};
+				            \draw[-latex] (3.75, 3.5) -- (5.25, 3.5);
+				            \node[shape=rectangle, minimum width=2.215cm, minimum height=0.715cm] at (4.5, 3.125){} node[anchor=center, align=center, text width=1.827cm, inner sep=6pt] at (4.5, 3.125){$I(t)$};
+				            \draw (-0, 4) to[american voltage source, mirror, l={\qtys{V_div_tens_G}{0}{V}}] (-0, -0);
+			            \end{tikzpicture}}
+		      \item Ci-bas, on a $V_\text{tot.}=\sage{V_tot_r}=\sage{V_tot}$.
+		            \sfig[.85]{\begin{tikzpicture}[thick]
+				            % Paths, nodes and wires:
+				            \draw (-0, 4) to[american resistor, l={$\sage{R_tot}$}] (3, 4);
+				            \draw (3, 4) to[american inductor, l={\qtys{L}{0}{H}}] (6, 4);
+				            \draw (6, 4) to[capacitor, l={$\sage{Cap}\units{F}$}] (9, 4);
+				            \draw (9, 4) to[american voltage source, invert, l={$\sage{V_tot}$}] (9, 0);
+				            \node[shape=rectangle, minimum width=2.215cm, minimum height=0.715cm] at (7.5, 3.125){} node[anchor=center, align=center, text width=1.827cm, inner sep=6pt] at (7.5, 3.125){$+$ $V_C(t)$ $-$};
+				            \draw[-latex] (3.75, 3.5) -- (5.25, 3.5);
+				            \node[shape=rectangle, minimum width=2.215cm, minimum height=0.715cm] at (4.5, 3.125){} node[anchor=center, align=center, text width=1.827cm, inner sep=6pt] at (4.5, 3.125){$I(t)$};
+				            \draw (-0, 4) -- (-0, -0);
+				            \draw (0, -0) -- (9, -0);
+			            \end{tikzpicture}}
+		      \item Résolution:
+		            \begin{gather*}
+			            V_C(t)=\sage{V_C_R_t}+\sage{LatexExpr(sln_part_r)}
+		            \end{gather*}
+		      \item En substituant:
+		            \begin{gather*}
+			            V_C(t)=D\cos{(2t+\theta)}e^{-3t}+\frac{-\frac{1}{2}ie^{3it}}{\frac{1}{13}\prb{3i}^2+\frac{6}{13}\prb{3i}+1}+\frac{\frac{1}{2}ie^{-3it}}{\frac{1}{13}\prb{-3i}^2+\frac{6}{13}\prb{-3i}+1}+1
+		            \end{gather*}
+		      \item Or:
+		            \begin{gather*}
+			            \frac{1}{13}\prb{3i}^2+\frac{6}{13}\prb{3i}+1=\frac{4}{13}+\frac{18i}{13}=\frac{2}{13}\sqrt{85}\cdot e^{i\arctan{(9/2)}}
+		            \end{gather*}
+		            \begin{sagesilent}
+			            V_C_expr_man = D*e^(-3*t)*cos(2*t+th)+1+(1/2)/(2/13*sqrt(85))*sin(3*t-arctan(9/2))
+			            I_t, _I_t = dexpr([[Cap,DERIV(DIFF, V_C_expr_man, t)]])
+
+			            V_0_comp, _V_0_comp = dexpr([V_C_0_p],[V_C_expr_man.subs(t=0)])
+			            I_0_comp, _I_0_comp = dexpr([I_0_p],[I_t.subs(t=0)])
+
+			            D_1 = solve(V_0_comp, D)[0].rhs()
+			            D_2 = solve(I_0_comp, D)[0].rhs()
+			            comp_D = D_1 == D_2
+
+			            th_r = solve(comp_D, th)[0]
+			            th_tan = th_r.rhs()/cos(th)
+			            th_f = arctan(th_tan)
+
+			            D = D_1.subs(th = th_f)
+		            \end{sagesilent}
+		      \item De cette façon:
+		            \begin{gather*}
+			            V_C(t)=De^{-3t}\cos{(2t+\theta)}+1+\frac{\frac{1}{2}}{\frac{2}{13}\sqrt{85}}\prb{\sin{(3t-\arctan{(9/2)})}}\\
+			            =\sage{V_C_expr_man}
+		            \end{gather*}
+		      \item Or:
+		            \begin{gather*}
+			            \scalebox{.65}{$\displaystyle I(t)=\sage{_I_t}$}
+		            \end{gather*}
+		      \item De plus:
+		            \begin{gather*}
+			            \scalebox{1}{$\displaystyle V_C(0^+)=V_C(0^-)\Longrightarrow\sage{_V_0_comp}$}\\
+			            \scalebox{.9}{$\displaystyle I(0^+)=I(0^-)\Longrightarrow\sage{_I_0_comp}$}
+		            \end{gather*}
+		      \item Des deux équations, on isole $D$:
+		            \begin{gather*}
+			            D_1=\sage{D_1}\\
+			            D_2=\sage{D_2}
+		            \end{gather*}
+		      \item Comparaison:
+		            \begin{gather*}
+			            \sage{comp_D}\\
+			            \Longrightarrow\tan{\theta}=\sage{th_tan}\Longrightarrow\boxed{\theta=\qtys{th_f}{2}{rad}\approx\sage{set_rational_answers(False)}\nums{th_f * 360 / (2 * pi)}{2}\degree\sage{set_rational_answers(True)}}\\
+			            \Longrightarrow\boxed{D=\nums{D}{2}}
+		            \end{gather*}
+		      \item Expressions finales:
+		            \begin{gather*}
+			            \boxed{\scalebox{1}{$\displaystyle V_C(t)=\sage{V_C_expr_man.subs(D = D, th = th_f)}$}}
+		            \end{gather*}
+	      \end{itemize}
+	\item En régime permanent:
+	      \begin{gather*}
+		      V_C(t)=\frac{-\frac{1}{2}ie^{\sqrt{13}t}}{\frac{1}{13}\prb{\sqrt{13}i}^2+\frac{6}{13}\prb{\sqrt{13}i}+1}+\frac{\frac{1}{2}ie^{-\sqrt{13}it}}{\frac{1}{13}\prb{-\sqrt{13}i}^2+\frac{6}{13}\prb{-\sqrt{13}i}+1}+1
+	      \end{gather*}
+	      Or, on a:
+	      \begin{sagesilent}
+		      restore('I')
+		      comp_expr, _comp_expr = dexpr([[1,DIV,13],TIMES,[[13,POW,1/2,I],POW,2],[6,DIV,13],TIMES,[13,POW,1/2,I],1])
+		      comp_M = abs(comp_expr)
+		      comp_angle = arg(comp_expr).simplify_full()
+		      pf = comp_M * exp(I * comp_angle)
+	      \end{sagesilent}
+	      \begin{gather*}
+		      \sage{_comp_expr}=\sage{pf}\qquad\prb{\theta=\sage{comp_angle}}\\
+		      \Longrightarrow\boxed{V_C(t)=\frac{\frac{1}{2}}{\frac{6}{13}\sqrt{13}\pi}\prb{\sin{\prb{\sqrt{13}t-\sage{comp_angle}}}}=\frac{\sqrt{13}}{12\pi}\prb{\sin{\prb{\sqrt{13}t-\sage{comp_angle}}}}}
+	      \end{gather*}
+	      Notons que $\frac{1}{\sqrt{LC}}=\sage{1/sqrt(L*Cap)}$ est égal à $\omega_s$. Nous sommes donc en présence de résonance.
+\end{enumerate}
+\end{document}

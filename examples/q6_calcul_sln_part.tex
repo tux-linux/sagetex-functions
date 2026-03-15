@@ -1,0 +1,8 @@
+\begin{sagesilent}
+sln_part = []
+count = 0
+while count < len(liste_Y):
+    expr = V_C_t_expr.subs(A=0).subs(Y = liste_Y[count], s_p = liste_s_p[count])
+    sln_part.append(expr)
+    count += 1
+\end{sagesilent}

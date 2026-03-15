@@ -1,0 +1,12 @@
+\begin{sagesilent}
+sln_part = []
+sln_part_r = ""
+count = 0
+while count < len(liste_Y):
+    expr_r, _expr_r = dexpr([V_tot.operands()[count],DIV,eq_s_R_F_1.lhs()])
+    expr, _expr = dexpr([V_tot.operands()[count],DIV,eq_s_R_F_1.lhs().subs(s = liste_s_p[count])])
+    sln_part_r += _expr_r + "+"
+    sln_part.append(expr)
+    count += 1
+sln_part_r = sln_part_r[:-1]
+\end{sagesilent}
