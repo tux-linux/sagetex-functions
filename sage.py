@@ -25,7 +25,7 @@ def _set_sym_names(d, counts=None):
     global _SYM_NAMES, _SYM_COUNTS
     _SYM_NAMES = d
     if counts is None:
-        _SYM_COUNTS = {k: float('inf') for k in d} # Rétrocompatibilité
+        _SYM_COUNTS = {k: float('inf') for k in d}
     else:
         _SYM_COUNTS = counts.copy()
 
