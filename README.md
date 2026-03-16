@@ -97,7 +97,9 @@ There are several issues with this approach:
 - Sage rearranges the equation's layout as it sees fit, and does not at all consider the form of the input that the user entered into it. Hence, when it calls `latex()` on an expression, the layout it returns follows Sage's formatting rules and not yours.
 
 ## So, what can we do?
-To get around such issues, I designed specific Python functions that simultaneously return a verbose LaTeX expression as well as the actual Sage expression to be used for internal calculation purposes. For example, if we take a look at the following expression:
+
+### Standard expressions
+To get around such issues, I have designed specific Python functions that simultaneously return a verbose LaTeX expression as well as the actual Sage expression to be used for internal calculation purposes. For example, if we take a look at the following expression:
 
 $$\frac{3x\sqrt{yx\cdot\frac{4}{87}\cdot\frac{x^2}{53\cdot 8}}}{4\sqrt{yx^2}}$$
 
@@ -143,4 +145,32 @@ It now renders as:
 <img src="https://raw.githubusercontent.com/tux-linux/sagetex-functions/refs/heads/main/assets/demo5.png" width="467" height="212.5"/>
 </div>
 
-Notice how the SageTeX expression is exactly the same as the one obtained before, yet we have only written out our equation **once** (albeit having achieved that with a slightly more convoluted syntax) **and** we are able to enforce formatting correctly when displaying it.
+Notice how the SageTeX expression is exactly the same as the one obtained before, yet we have only written out our equation **once** (albeit having achieved that with a slightly more convoluted syntax) **and** we were able to enforce formatting correctly when displaying it.
+
+#### The `dexpr` function
+This function, which is the main building block of the framework I have designed, takes standard Python lists as arguments. If you want an equation to be returned, you provide it with two arguments, the left-hand side (LHS) and the right-hand side (RHS) of the equation. If you only want an expression to be returned, you only need to provide the LHS.
+
+Take this straightforward example:
+
+$$5x+4x+y=8$$
+
+SageTeX wouldn't allow us to display it this way (it would automatically add the terms with $x$ together, resulting in $9x+y=8$). Thus, let's use the `dexpr` function for this:
+
+```latex
+\begin{sagesilent}
+	x = var('x')
+	y = var('y')
+    expr, _expr = dexpr([5*x, 4*x, y], [8])
+\end{sagesilent}
+The expression is $\sage{_expr}$.
+
+The Sage\TeX\:representation of this expression is instead $\sage{expr}$.
+```
+We obtain:
+<div style="text-align: center;">
+<img src="https://raw.githubusercontent.com/tux-linux/sagetex-functions/refs/heads/main/assets/demo6.png" width="719.25" height="84"/>
+</div>
+
+Note that although you can use standard operators everywhere (`PLUS`, `MINUS`, `TIMES`, `DIV`, for example), if we are on the first level of a list, the function assumes addition between elements by default.
+
+### Matrices
