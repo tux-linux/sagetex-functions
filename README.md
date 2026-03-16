@@ -51,7 +51,7 @@ This will produce the following LaTeX output:
 
 #### This works fine. Where's the problem, then?
 
-Suppose you broke the laws of physics and that suddenly, the given equation that's been known for decades does not hold up anymore. Provided that you haven't caused a worldwide meltdown and that you are still alive, you now have to modify your LaTeX document for it to be as up-to-date as possible with the current laws of physics.
+Suppose you broke the laws of physics and that suddenly, the given equation that's been known for centuries does not hold up anymore. Provided that you haven't caused a worldwide meltdown and that you are still alive, you now have to modify your LaTeX document for it to be as up-to-date as possible with the current laws of physics.
 
 #### How can that be *so* bad?
 
