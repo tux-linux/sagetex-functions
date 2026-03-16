@@ -72,9 +72,9 @@ L = var('L')
 expr = v^2 == v_o^2 + 2 * a * L
 \end{sagesilent}
 We know that
-\begin{gather*}
+\[
     \sage{expr}
-\end{gather*}
+\]
 ```
 Don't get me wrong, it *will* print this equation correctly (notice, though, that Sage rearranged the presentation according to its own free will). Now, suppose we want to procedurally generate the LaTeX output *exactly* as it was in the previous method:
 ```latex
@@ -82,16 +82,65 @@ Don't get me wrong, it *will* print this equation correctly (notice, though, tha
     expr = expr.subs(v_o = 1, v = 8, L = 4)
 \end{sagesilent}
 Substituting the given values, we obtain:
-\begin{gather*}
+\[
     \sage{expr}\Longrightarrow a=\sage{solve(expr, a)[0].rhs()}\:\text{m/s$^2$}
-\end{gather*}
+\]
 ```
 This finally produces:
 <div style="text-align: center;">
 <img src="https://raw.githubusercontent.com/tux-linux/sagetex-functions/refs/heads/main/assets/demo3.png" width="688" height="265.33333333"/>
 </div>
-There are several problems with this approach:
+There are several issues with this approach:
 
 - **Missing verbosity**: while manually typesetting our equation in the previous example, we took the liberty to put parentheses around `a * 4` and a `\cdot` (multiplication dot) between the two members inside the parentheses. Note how Sage did not notice it and simplified the equation right away. It may not seem significant with this example, but provided that you have a more complicated equation containing square roots and multiple fractions, Sage *will* automatically simplify them as soon as it can. This may render your formula unrecognizable from the textbooks' and may lead to confusion among your readers.
 - We were forced to systematically declare all of our variables, which is something that gets clunky over time.
 - Sage rearranges the equation's layout as it sees fit, and does not at all consider the form of the input that the user entered into it. Hence, when it calls `latex()` on an expression, the layout it returns follows Sage's formatting rules and not yours.
+
+## So, what can we do?
+To get around such issues, I designed specific Python functions that simultaneously return a verbose LaTeX expression as well as the actual Sage expression to be used for internal calculation purposes. For example, if we take a look at the following expression:
+
+$$\frac{3x\sqrt{yx\cdot\frac{4}{87}\cdot\frac{x^2}{53\cdot 8}}}{4\sqrt{yx^2}}$$
+
+In plain LaTeX, we would typeset it out as:
+```latex
+\frac{3x\sqrt{yx\cdot\frac{4}{87}\cdot\frac{x^2}{53\cdot 8}}}{4\sqrt{yx^2}}
+```
+With standard Sage syntax, we would instead write
+```latex
+\begin{sagesilent}
+x = var('x')
+y = var('y')
+
+expr = 3*x * sqrt(y*x * 4/87 * x^2 / (53 * 8)) / (4 * sqrt(y*x^2))
+\end{sagesilent}
+\[
+    \sage{expr}
+\]
+```
+which would yield the following:
+<div style="text-align: center;">
+<img src="https://raw.githubusercontent.com/tux-linux/sagetex-functions/refs/heads/main/assets/demo4.png" width="181" height="117"/>
+</div>
+
+I think everyone can agree on the fact that this does not look like the original expression *at all*.
+
+Now consider this:
+```latex
+\begin{sagesilent}
+x = var('x')
+y = var('y')
+z = var('z')
+
+expr, _expr = dexpr([3,TIMES,x,TIMES,[[y,TIMES,x,TIMES,4,TIMES,x^2],DIV,[87,TIMES,53,TIMES,8]],POW,1/2,DIV,[4,TIMES,[y,TIMES,x,POW,2],POW,1/2]])
+\end{sagesilent}
+\begin{gather*}
+	\text{Custom \LaTeX\:expression: }\sage{_expr}\\
+	\text{Native Sage\TeX\:expression: }\sage{expr}
+\end{gather*}
+```
+It now renders as:
+<div style="text-align: center;">
+<img src="https://raw.githubusercontent.com/tux-linux/sagetex-functions/refs/heads/main/assets/demo5.png" width="467" height="212.5"/>
+</div>
+
+Notice how the SageTeX expression is exactly the same as the one obtained before, yet we have only written out our equation **once** (albeit having achieved that with a slightly more convoluted syntax) **and** we are able to enforce formatting correctly when displaying it.
