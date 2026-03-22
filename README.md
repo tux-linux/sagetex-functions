@@ -1,6 +1,6 @@
-# SageTeX helper functions
+# $\text{Sage\TeX}$ helper functions
 ## Introduction
-You may already know [SageTeX](https://mirrors.mit.edu/CTAN/macros/latex/contrib/sagetex/sagetex.pdf) from past experiences of having used LaTeX. With such a package, and the help of the [SageMath](https://www.sagemath.org/) computer algebra system (CAS), one can program equations (and have them solved) directly into a LaTeX document:
+You may already know [$\text{Sage\TeX}$](https://mirrors.mit.edu/CTAN/macros/latex/contrib/sagetex/sagetex.pdf) from past experiences of having used $\text{\LaTeX}$. With such a package, and the help of the [SageMath](https://www.sagemath.org/) computer algebra system (CAS), one can program equations (and have them solved) directly into a LaTeX document:
 ```latex
 \begin{sagesilent}
 x = var('x')
@@ -15,8 +15,8 @@ For example, the above code produces:
 <img src="https://raw.githubusercontent.com/tux-linux/sagetex-functions/refs/heads/main/assets/demo1.png" width="346" height="90"/>
 </div>
 
-## Limitations about extensive SageTeX use
-Suppose you have an physics assignment about your favourite class subject to hand in. As you just discovered SageTeX by visiting this repository or because some high-tech friend told you about it, you immediately see the potential it could have to help you mitigate the risks of having your quirky brain inevitably commit mathematical mistakes wherever it sees fit (a forgotten exponent or multiplication, or a mere sign issue, for example). But you soon realize that SageTeX is not necessarily perfect.
+## Limitations about extensive $\text{Sage\TeX}$ use
+Suppose you have an physics assignment about your favourite class subject to hand in. As you just discovered $\text{Sage\TeX}$ by visiting this repository or because some high-tech friend told you about it, you immediately see the potential it could have to help you mitigate the risks of having your quirky brain inevitably commit mathematical mistakes wherever it sees fit (a forgotten exponent or multiplication, or a mere sign issue, for example). But you soon realize that $\text{Sage\TeX}$ is not necessarily perfect.
 
 ### How it can get messy
 
@@ -145,7 +145,7 @@ It now renders as:
 <img src="https://raw.githubusercontent.com/tux-linux/sagetex-functions/refs/heads/main/assets/demo5.png" width="467" height="212.5"/>
 </div>
 
-Notice how the SageTeX expression is exactly the same as the one obtained before, yet we have only written out our equation **once** (albeit having achieved that with a slightly more convoluted syntax) **and** we were able to enforce formatting correctly when displaying it.
+Notice how the $\text{Sage\TeX}$ expression is exactly the same as the one obtained before, yet we have only written it out **once** (albeit having achieved that with a slightly more convoluted syntax) **and** we were able to enforce its formatting correctly.
 
 #### The `dexpr` function
 This function, which is the main building block of the framework I have designed, takes standard Python lists as arguments. If you want an equation to be returned, you provide it with two arguments, the left-hand side (LHS) and the right-hand side (RHS) of the equation. If you only want an expression to be returned, you only need to provide the LHS.
@@ -154,7 +154,7 @@ Take this straightforward example:
 
 $$5x+4x+y=8$$
 
-SageTeX wouldn't allow us to display it this way (it would automatically add the terms with $x$ together, resulting in $9x+y=8$). Thus, let's use the `dexpr` function for this:
+$\text{Sage\TeX}$ wouldn't allow us to display it this way (it would automatically add the terms with $x$ together, resulting in $9x+y=8$). Thus, let's use the `dexpr` function for this:
 
 ```latex
 \begin{sagesilent}
@@ -174,3 +174,46 @@ We obtain:
 Note that although you can use standard operators everywhere (`PLUS`, `MINUS`, `TIMES`, `DIV`, for example), if we are on the first level of a list, the function assumes addition between elements by default.
 
 ### Matrices
+Suppose that you follow a course about electrical circuits and that you have to use the formula
+
+$$GV=I$$
+
+where $G$ is the conductance matrix, $V$ is the voltage matrix and $I$ is the electric current matrix. Knowing that the elements of $G$ are of the form
+
+$$G_{ij}=\frac{1}{R_1}+\frac{1}{R_2}+\dots+\frac{1}{R_n}$$
+
+we typically see such matrices in textbooks written out as:
+
+$$G=\begin{pmatrix}\frac{1}{1}+\frac{1}{2}&-1\\-1&\frac{1}{1}+\frac{1}{3}\end{pmatrix}$$
+
+How would we do this with vanilla $\text{Sage\TeX}$? We might be tempted to write the following:
+
+```latex
+\begin{sagesilent}
+    M = matrix([[1/1+1/2, -1],[-1, 1/1+1/3]])
+\end{sagesilent}
+We obtain the following matrix:
+\[
+    G=\sage{M}
+\]
+```
+This gives us:
+<div style="text-align: center;">
+<img src="https://raw.githubusercontent.com/tux-linux/sagetex-functions/refs/heads/main/assets/demo7.png" width="592" height="137.6"/>
+</div>
+
+That is obviously *not* what we wanted. Instead, what about this:
+```latex
+\begin{sagesilent}
+    M, _M = matdexpr([[dexpr([1,DIV,1,1,DIV,2]),-1],[-1,dexpr([1,DIV,1,1,DIV,3])]])
+\end{sagesilent}
+We obtain the following matrix:
+\[
+    G=\sage{M}
+\]
+```
+
+That instead yields:
+<div style="text-align: center;">
+<img src="https://raw.githubusercontent.com/tux-linux/sagetex-functions/refs/heads/main/assets/demo8.png" width="592" height="137.6"/>
+</div>
