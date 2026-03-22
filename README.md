@@ -184,7 +184,7 @@ $$G_{ij}=\frac{1}{R_1}+\frac{1}{R_2}+\dots+\frac{1}{R_n}$$
 
 we typically see such matrices in textbooks written out as:
 
-$$G=\begin{pmatrix}\frac{1}{1}+\frac{1}{2}&-1\\-1&\frac{1}{1}+\frac{1}{3}\end{pmatrix}$$
+$$G=\begin{pmatrix}\frac{1}{1}+\frac{1}{2}&-1\\ -1&\frac{1}{1}+\frac{1}{3}\end{pmatrix}$$
 
 How would we do this with vanilla SageTeX? We might be tempted to write the following:
 
