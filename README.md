@@ -252,3 +252,29 @@ That instead yields:
 <div style="text-align: center;">
 <img src="https://raw.githubusercontent.com/tux-linux/sagetex-functions/refs/heads/main/assets/demo8.png" width="592" height="137.6"/>
 </div>
+
+### PDF tooltips
+
+*Well, this is nice, but how will I find my way back to my variables and formulas from the PDF itself?*
+
+The in-house preprocessor adds a tooltip (PDF hint/alt text) on the actual PDF every time you call `\sage` or `qtys`/`nums` throughout the whole document. To see them, just hover your mouse over the typeset expression.
+
+The tooltip contains the closest definition of the variable/value that the preprocessor can find. Below are some examples of what this can look like:
+
+<div style="text-align: center;">
+<img src="https://raw.githubusercontent.com/tux-linux/sagetex-functions/refs/heads/main/assets/pdf1.png" width="846.5" height="352"/>
+</div>
+
+<div style="text-align: center;">
+<img src="https://raw.githubusercontent.com/tux-linux/sagetex-functions/refs/heads/main/assets/pdf3.png" width="846.5" height="602"/>
+</div>
+
+<div style="text-align: center;">
+<img src="https://raw.githubusercontent.com/tux-linux/sagetex-functions/refs/heads/main/assets/pdf4.png" width="918" height="288"/>
+</div>
+
+It applies to matrices, too!
+
+<div style="text-align: center;">
+<img src="https://raw.githubusercontent.com/tux-linux/sagetex-functions/refs/heads/main/assets/pdf2.png" width="779" height="459"/>
+</div>
