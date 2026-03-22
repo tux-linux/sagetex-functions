@@ -205,8 +205,8 @@ This yields:
 
 Notice the following:
 - We only needed to attribute *values* to the variables, not *define* the Python variables actually holding these values as Sage variables beforehand:
-    - A special preprocessor reads the LaTeX source before compiling and adds the relevant symbols automatically so we don't have to do it ourselves. This allows the compiler to simultaneously typeset the variables-only equation and the equation with substituted values, without requesting any further action from us.
-- A special, in-house wrapper called `qtys` (LaTeX's `qty` for `s`age) automatically displays the computed value and allows us to choose the number of decimals we want to keep. It also displays the exact result before approximating it.
+    - A special [preprocessor](https://github.com/tux-linux/sagetex-functions/blob/main/preprocessing.py) reads the LaTeX source before compiling and adds the relevant symbols automatically so we don't have to do it ourselves. This allows the compiler to simultaneously typeset the variables-only equation and the equation with substituted values, without requesting any further action from us.
+- A special, in-house wrapper called `\qtys` (LaTeX's `\qty` for `s`age) automatically displays the computed value and allows us to choose the number of decimals we want to keep. It also displays the exact result before approximating it.
 
 ### Matrices
 Suppose that you follow a course about electrical circuits and that you have to use the formula
@@ -257,7 +257,7 @@ That instead yields:
 
 *Well, this is nice, but how will I find my way back to my variables and formulas from the PDF itself?*
 
-The in-house preprocessor adds a tooltip (PDF hint/alt text) on the actual PDF every time you call `\sage` or `qtys`/`nums` throughout the whole document. To see them, just hover your mouse over the typeset expression.
+The in-house preprocessor adds a tooltip (PDF hint/alt text) on the actual PDF every time you call `\sage` or `\qtys`/`\nums` throughout the whole document. To see them, just hover your mouse over the typeset expression.
 
 The tooltip contains the closest definition of the variable/value that the preprocessor can find. Below are some examples of what this can look like:
 
@@ -278,3 +278,10 @@ It applies to matrices, too!
 <div style="text-align: center;">
 <img src="https://raw.githubusercontent.com/tux-linux/sagetex-functions/refs/heads/main/assets/pdf2.png" width="779" height="459"/>
 </div>
+
+## Disclaimer
+Since university eats your time so much, most of this project has been written with Claude/Gemini. Should I want to do it again, I probably would write more code myself, because using mostly AI and not thinking too much was less fun. Rest assured, though: I still have looked at the actual code and I am not completely illitterate about it. I also have done several modifications and tweaks to Claude's or Gemini's raw output.
+
+I have also extensively tested the framework on my side, so I know what it's capable of.
+
+Also, this README has entirely been written by myself, "myself" being an actual human. How about that?
