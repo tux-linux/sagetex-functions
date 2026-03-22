@@ -178,9 +178,9 @@ Suppose that you follow a course about electrical circuits and that you have to 
 
 $$GV=I$$
 
-where $G$ is the conductance matrix, $V$ is the voltage matrix and $I$ is the electric current matrix. Knowing that the elements of $G$ are of the form
+where $G$ is the conductance matrix, $V$ is the voltage matrix and $I$ is the electric current matrix. Knowing that the elements on the diagonal of $G$ are of the form
 
-$$G_{ij}=\frac{1}{R_1}+\frac{1}{R_2}+\dots+\frac{1}{R_n}$$
+$$G_{ii}=\frac{1}{R_1}+\frac{1}{R_2}+\dots+\frac{1}{R_n}$$
 
 we typically see such matrices in textbooks written out as:
 
