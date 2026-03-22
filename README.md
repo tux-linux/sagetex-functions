@@ -90,6 +90,7 @@ This finally produces:
 <div style="text-align: center;">
 <img src="https://raw.githubusercontent.com/tux-linux/sagetex-functions/refs/heads/main/assets/demo3.png" width="688" height="265.33333333"/>
 </div>
+
 There are several issues with this approach:
 
 - **Missing verbosity**: while manually typesetting our equation in the previous example, we took the liberty to put parentheses around `a * 4` and a `\cdot` (multiplication dot) between the two members inside the parentheses. Note how Sage did not notice it and simplified the equation right away. It may not seem significant with this example, but provided that you have a more complicated equation containing square roots and multiple fractions, Sage *will* automatically simplify them as soon as it can. This may render your formula unrecognizable from the textbooks' and may lead to confusion among your readers.
@@ -172,6 +173,40 @@ We obtain:
 </div>
 
 Note that although you can use standard operators everywhere (`PLUS`, `MINUS`, `TIMES`, `DIV`, for example), if we are on the first level of a list, the function assumes addition between elements by default.
+
+#### A better way to typeset our physics problem
+
+With the `dexpr` tool in hand, we can now rewrite our solution to the initial physics problem with the least possible amount of redundancy:
+
+```latex
+\begin{sagesilent}
+	a = var('a')
+	v_o = 1
+	v = 8
+	L = 4
+
+	expr, _expr = dexpr([v,POW,2],[v_o,POW,2,2,TIMES,a,TIMES,L])
+	a = solve(expr, a)[0].rhs()
+\end{sagesilent}
+We know that
+\begin{gather*}
+	\sage{_expr}
+\end{gather*}
+Hence:
+\begin{gather*}
+	a=\qtys{a}{1}{m/s^2}
+\end{gather*}
+```
+
+This yields:
+<div style="text-align: center;">
+<img src="https://raw.githubusercontent.com/tux-linux/sagetex-functions/refs/heads/main/assets/demo9.png" width="741.6" height="248"/>
+</div>
+
+Notice the following:
+- We only needed to attribute *values* to the variables, not *define* the Python variables actually holding these values as Sage variables beforehand:
+    - A special preprocessor reads the LaTeX source before compiling and adds the relevant symbols automatically so we don't have to do it ourselves. This allows the compiler to simultaneously typeset the variables-only equation and the equation with substituted values, without requesting any further action from us.
+- A special, in-house wrapper called `qtys` (LaTeX's `qty` for `s`age) automatically displays the computed value and allows us to choose the number of decimals we want to keep. It also displays the exact result before approximating it.
 
 ### Matrices
 Suppose that you follow a course about electrical circuits and that you have to use the formula
