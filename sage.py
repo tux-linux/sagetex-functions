@@ -19,7 +19,7 @@ PRECISION_CHECKS = True
 RAT_ANS = True
 
 _SYM_NAMES = {}
-_SYM_COUNTS = {} # Ajout d'un dictionnaire de quotas
+_SYM_COUNTS = {}
 
 def _set_sym_names(d, counts=None):
     global _SYM_NAMES, _SYM_COUNTS

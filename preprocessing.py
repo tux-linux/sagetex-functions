@@ -127,6 +127,7 @@ def wrap_with_tooltip(tex_content, definitions, plain_defs):
         (re.compile(r'\\sagestr\{([^}]+)\}'), 'sagestr'),
         (re.compile(r'\\nums\{([^}]+)\}\{[^}]*\}'), 'nums'),
         (re.compile(r'\\qtys\{([^}]+)\}\{[^}]*\}\{[^}]*\}'), 'qtys'),
+        (re.compile(r'\\datail\{([^}]+)\}\{[^}]*\}\{[^}]*\}'), 'datail'),
     ]
 
     result_lines = []
@@ -232,15 +233,18 @@ def inject_sym_registries(tex_content):
     return '\n'.join(result_lines)
 
 def main():
-    if len(sys.argv) < 2:
-        print("Usage: python3 add_tooltips.py input.tex [output.tex]")
+    if len(sys.argv) < 3:
+        print("Usage: python3 preprocessing.py <enable_expansion (0|1)> <enable_tooltips (0|1)> input.tex [output.tex]")
         sys.exit(1)
 
-    input_file = sys.argv[1]
-    output_file = sys.argv[2] if len(sys.argv) > 2 else input_file.replace('.tex', '_tooltipped.tex')
+    enable_expansion = sys.argv[1]
+    enable_tooltips = sys.argv[2]
+    input_file = sys.argv[3]
+    output_file = sys.argv[4] if len(sys.argv) > 4 else input_file.replace('.tex', '_tooltipped.tex')
 
     with open(input_file, 'r', encoding='utf-8') as f:
         content = f.read()
+    result = content
 
     print("Scanning for _variable definitions in sagesilent blocks...")
     definitions = extract_definitions(content)
@@ -258,17 +262,19 @@ def main():
         for k, entries in sorted(multi.items()):
             print(f"    _{k}: {len(entries)} definitions at lines {[e[0] for e in entries]}")
 
-    print("\nWrapping macros with \\pdftooltip...")
-    result = wrap_with_tooltip(content, definitions, plain_defs)
+    if enable_tooltips == "1":
+        print("\nWrapping macros with \\pdftooltip...")
+        result = wrap_with_tooltip(content, definitions, plain_defs)
 
-    tooltip_count = len(re.findall(r'\\pdftooltip\{\\(?:sage)', result))
-    print(f"Added {tooltip_count} \\pdftooltip wrappers.")
+        tooltip_count = len(re.findall(r'\\pdftooltip\{\\(?:sage)', result))
+        print(f"Added {tooltip_count} \\pdftooltip wrappers.")
 
-    print("\nInjecting symbolic name registries for dexpr/matdexpr...")
-    result = inject_sym_registries(result)
+    if enable_expansion == "1":
+        print("\nInjecting symbolic name registries for dexpr...")
+        result = inject_sym_registries(result)
 
-    inject_count = len(re.findall(r'_set_sym_names\(', result))
-    print(f"Injected {inject_count} registry calls.")
+        inject_count = len(re.findall(r'_set_sym_names\(', result))
+        print(f"Injected {inject_count} registry calls.")
 
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write(result)
