@@ -8,6 +8,7 @@ PLUS = "+"
 MINUS = "-"
 POW = "^"
 NEG = "NEG"
+ABS = "ABS"
 DIFF = 'd'
 PARTIAL = 'p'
 def DERIV(dtype, num, den, order=None):
@@ -178,7 +179,7 @@ def svar(name, lname=None):
 #### HELPERS ####
 
 def _is_op(e):
-    return e in (DIV, TIMES, PLUS, POW, MINUS, NEG)
+    return e in (DIV, TIMES, PLUS, POW, MINUS, NEG, ABS)
 
 def _is_symbolic(sage_val):
     """True if sage_val is a bare symbol, function application, or product of such."""
@@ -218,7 +219,9 @@ def _parse(elements, default_op=PLUS):
             expanded.append(default_op)
         expanded.append(e)
 
-    # Resolve NEG tokens: NEG x -> (-x, "-latex(x)")
+    # Resolve NEG and ABS tokens
+    # NEG x  -> (-x, "-latex(x)")
+    # ABS x  -> (abs(x), r"\left|latex(x)\right|")
     resolved = []
     i = 0
     while i < len(expanded):
@@ -232,6 +235,16 @@ def _parse(elements, default_op=PLUS):
                 sv, lt = nxt, latex(nxt)
             # Store as a special pre-negated tuple
             resolved.append(('__neg__', -sv, lt))
+        elif e == ABS:
+            i += 1
+            nxt = expanded[i]
+            if isinstance(nxt, list):
+                sv, lt = _parse(nxt, default_op=TIMES)
+            else:
+                sv, lt = nxt, latex(nxt)
+            abs_sv = abs(sv)
+            abs_lt = r"\left|" + lt + r"\right|"
+            resolved.append(('__abs__', abs_sv, abs_lt))
         else:
             resolved.append(e)
         i += 1
@@ -243,6 +256,11 @@ def _parse(elements, default_op=PLUS):
             _, sv, lt = e
             # Prepend minus but mark as nested so _build_product can decide on parens
             terms.append((current_op, sv, "-" + lt, True))
+            current_op = PLUS
+        elif isinstance(e, tuple) and e[0] == '__abs__':
+            _, sv, lt = e
+            # ABS result is already fully bracketed — not nested for parens purposes
+            terms.append((current_op, sv, lt, False))
             current_op = PLUS
         elif isinstance(e, tuple) and e[0] == '__deriv__':
             _, dtype, num, den, order = e
@@ -448,7 +466,7 @@ def _dexpr(lhs, rhs=None):
 
     Top-level default operator: PLUS.
     Nested list default operator: TIMES.
-    Explicit tokens DIV / TIMES / PLUS / POW override the default locally.
+    Explicit tokens DIV / TIMES / PLUS / POW / NEG / ABS override the default locally.
 
     Examples:
         x = svar('x')
@@ -456,6 +474,9 @@ def _dexpr(lhs, rhs=None):
         dexpr([2, TIMES, x, POW, 2])  # 2x^2
         dexpr([x, POW, 2, PLUS, y, POW, 2])  # x^2 + y^2
         dexpr([2, TIMES, x], [10])
+        dexpr([ABS, x])               # |x|
+        dexpr([ABS, [x, PLUS, 3]])    # |x + 3|
+        dexpr([2, TIMES, ABS, x])     # 2|x|
     """
     lhs_sage, lhs_lat = _parse(lhs, default_op=PLUS)
     if rhs is None:
