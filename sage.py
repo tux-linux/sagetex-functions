@@ -405,7 +405,7 @@ def _build_product(group, force_no_parens=False):
 
     latex_parts = [parts[0][1]]
     for (sv, lt) in parts[1:]:
-        if _is_symbolic(sv):
+        if _is_symbolic(sv) or lt.startswith(r"\left|"):
             latex_parts.append(r" \, " + lt)           # juxtapose: no \cdot
         else:
             latex_parts.append(r" \cdot " + lt)
