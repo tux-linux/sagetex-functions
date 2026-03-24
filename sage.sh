@@ -4,7 +4,9 @@ export PATH="$PATH:/home/${USER}/miniforge3/envs/sage/bin"
 export PATH="$PATH:/Users/${USER}/miniforge3/envs/sage/bin/"
 
 clean() {
-	rm -rf "${TEMP}"
+	# echo "Complete directory listing before removal:"
+	# ls -shal "${TEMP}/${DIR}"
+	#rm -rf "${TEMP}"
 	kill -s TERM "${TOP_PID}"
 }
 
@@ -69,6 +71,8 @@ fi
 pdflatex -halt-on-error "${TEMP}/${DIR}/${FILE}" || clean
 mkdir -p "${LATEX_TEMP}" && cp "${TEMP}/${DIR}/${FILENAME}.pdf" "${LATEX_TEMP}"
 popd
+mkdir -p "${LATEX_TEMP}/last-built"
+cp -Lr "${TEMP}/${DIR}" "${LATEX_TEMP}/last-built"
 rm -rf "${TEMP}"
 
 rm -f "${PIDFILE}"

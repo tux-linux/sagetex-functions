@@ -20,6 +20,7 @@ def process_file(filename):
             # SKIP PATTERNS: If the regex matches these, it returns them unchanged (Group 1)
             # This ensures we don't double-wrap or break existing macros.
             skip = [
+                r'\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\}',
                 r'\\nums?\{[^}]*\}',                # Matches \num{...} and \nums{...}
                 r'\\qtys?\{[^}]*\}(?:\{[^}]*\})?',  # Matches \qty{v}{u}, \qty{v}, \qtys{v}{u}, etc.
                 r'\\begin\{[^}]*\}',                # Environment starts
