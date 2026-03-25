@@ -81,7 +81,7 @@ def _symbolify_list(elements):
             result.append(_id_to_sym(e))
     return result
 
-def dexpr(lhs, rhs=None):
+def dexpr(lhs, rhs=None, sym_only=False):
     if not _SYM_NAMES:
         return _dexpr(lhs, rhs)
     sym_lhs = _symbolify_list(lhs)
@@ -91,6 +91,8 @@ def dexpr(lhs, rhs=None):
         val, num_lat = _dexpr(lhs)
         if str(sym_lhs_lat) == str(num_lat):
             return val, num_lat
+        if sym_only:
+            return val, LatexExpr(sym_lhs_lat)
         return val, LatexExpr(sym_lhs_lat + '=' + str(num_lat))
     _, sym_rhs_lat = _parse(sym_rhs, default_op=PLUS)
     val, num_lat = _dexpr(lhs, rhs)
@@ -99,6 +101,8 @@ def dexpr(lhs, rhs=None):
     _, num_only = _dexpr(lhs, rhs)
     if str(sym_combined) == str(num_only):
         return val, num_lat
+    if sym_only:
+        return val, LatexExpr(sym_lhs_lat)
     return val, LatexExpr(sym_lhs_lat + '=' + sym_rhs_lat + r'\Longrightarrow ' + str(num_lat))
 
 def set_precision_checks(bool):
@@ -587,4 +591,76 @@ def compute_parallel_resistance(resistors):
         expr = expr.lhs() == expr.rhs() + 1/value
 
     return solve(expr, R)[0].rhs()
+
+def build_lrg_plot(points_x_list, points_y_list, title, legends, width_multiplier, height, show_slopes=False, origin=False, extend=0.05, xlabel="X-axis", ylabel="Y-axis", max_space_between_ticks=40):
+    colors = ['blue', 'red', 'green', 'orange', 'purple', 'cyan']
+
+    # Move \centering before \caption for perfect alignment
+    lt = r"\begin{figure}[h!]\centering\caption{"
+    lt += title
+
+    # trim axis left/right goes in the tikzpicture options, not the axis options
+    lt += r"}\begin{tikzpicture}\begin{axis}[grid = both, axis x line=bottom,thick,axis line style={-Latex[round]}, axis y line=left,thick,axis line style={-Latex[round]},width="
+    lt += str(width_multiplier)
+    lt += r"\textwidth,height="
+    lt += str(height)
+
+    if origin:
+        lt += r"cm, xmin=0, ymin=0,"
+    else:
+        lt += r"cm,"
+
+    lt += f"xlabel={{{xlabel}}}, xlabel style={{yshift=-6.5pt}}, ylabel={{{ylabel}}}, ylabel near ticks, /pgf/number format/use comma, /pgf/number format/1000 sep={{\,}}, max space between ticks={{{max_space_between_ticks}}}, major grid style={{line width=0.2pt, draw=gray!50}}, minor grid style={{line width=0.1pt, draw=gray!30, dashed}}, minor x tick num=4, minor y tick num=4, tick label style={{font=\\footnotesize}},"
+    lt += (r" legend style={at={(0.5,-0.185)}, anchor=north, "
+           r"legend cell align={left}, "
+           r"inner sep=8pt, "       # Padding around the whole box
+           r"nodes={inner sep=2pt, anchor=west}} ]") # Padding between rows
+
+    for idx, (points_x, points_y, legend) in enumerate(zip(points_x_list, points_y_list, legends)):
+        color = colors[idx % len(colors)]
+        xs = [n(px[0]) for px in points_x]
+        ys = [n(py[0]) for py in points_y]
+
+        # Regression calculation
+        a, b = var('a b'); x = var('x')
+        fit = find_fit(list(zip(xs, ys)), a*x + b, parameters=[a, b], variables=[x])
+        slope, intercept = fit[0].rhs(), fit[1].rhs()
+        slope_str = "{:.4g}".format(float(slope))
+        intercept_str = "{:+.4g}".format(float(intercept))
+
+        # Calculate line boundaries
+        x_min, x_max = min(xs), max(xs)
+        x_range = x_max - x_min
+        x_start = max(0, x_min - extend * x_range) if origin else x_min - extend * x_range
+        x_end = x_max + extend * x_range
+        y_start = float(slope) * x_start + float(intercept)
+        y_end = float(slope) * x_end + float(intercept)
+
+        # 1. DATA POINTS
+        lt += r"\addplot[only marks, " + color + r", error bars/.cd, y dir=both, y explicit, x dir=both, x explicit] "
+        lt += r"table [row sep=\\, x=X, y=Y, x error=Xerr, y error=Yerr] {" + "\n"
+        lt += r"X Y Xerr Yerr \\" + "\n"
+        for px, py in zip(points_x, points_y):
+            lt += f"{n(px[0])} {n(py[0])} {n(px[1])} {n(py[1])} \\\\ \n"
+        lt += "};"
+
+        # This legend entry now correctly attaches to the marks above
+        lt += r"\addlegendentry{\small\:\:" + legend + "}"
+
+        # 2. REGRESSION LINE
+        # We add 'forget plot' so this line doesn't interfere with the next legend entry
+        lt += r"\addplot [thick, solid, " + color + r", no marks, forget plot] coordinates {("
+        lt += f"{x_start:.6g}, {y_start:.6g}) ({x_end:.6g}, {y_end:.6g})"
+        lt += "};"
+
+        # 3. SLOPE LEGEND (Optional)
+        # If you show slopes, we don't 'forget' this one because we want it in the legend
+        if show_slopes:
+            # We plot an invisible path or a ghost plot to carry the legend if 'forget plot' was used
+            lt += r"\addlegendimage{no marks, " + color + r", thick}"
+            lt += r"\addlegendentry{\small\:\:$" + slope_str + r"\,x " + intercept_str + "$}"
+
+    lt += r"\end{axis}\end{tikzpicture}\end{figure}"
+    return LatexExpr(lt)
+
 \end{sagesilent}
