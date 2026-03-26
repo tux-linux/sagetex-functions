@@ -611,10 +611,10 @@ def build_lrg_plot(points_x_list, points_y_list, title, legends, width_multiplie
         lt += r"cm,"
 
     lt += f"xlabel={{{xlabel}}}, xlabel style={{yshift=-6.5pt}}, ylabel={{{ylabel}}}, ylabel near ticks, /pgf/number format/use comma, /pgf/number format/1000 sep={{\,}}, max space between ticks={{{max_space_between_ticks}}}, major grid style={{line width=0.2pt, draw=gray!50}}, minor grid style={{line width=0.1pt, draw=gray!30, dashed}}, minor x tick num=4, minor y tick num=4, tick label style={{font=\\footnotesize}},"
-    lt += (r" legend style={at={(0.5,-0.185)}, anchor=north, "
-           r"legend cell align={left}, "
-           r"inner sep=8pt, "       # Padding around the whole box
-           r"nodes={inner sep=2pt, anchor=west}} ]") # Padding between rows
+    lt += (r" legend style={at={(0.0175,0.965)}, anchor=north west, "
+       r"legend cell align={left}, "
+       r"inner xsep=7.5pt, inner ysep=3pt, column sep=2.5pt,"
+       r"nodes={inner sep=2pt, anchor=west}} ]")
 
     for idx, (points_x, points_y, legend) in enumerate(zip(points_x_list, points_y_list, legends)):
         color = colors[idx % len(colors)]
@@ -645,7 +645,7 @@ def build_lrg_plot(points_x_list, points_y_list, title, legends, width_multiplie
         lt += "};"
 
         # This legend entry now correctly attaches to the marks above
-        lt += r"\addlegendentry{\small\:\:" + legend + "}"
+        lt += r"\addlegendentry{\footnotesize" + legend + "}"
 
         # 2. REGRESSION LINE
         # We add 'forget plot' so this line doesn't interfere with the next legend entry
