@@ -127,7 +127,8 @@ def wrap_with_tooltip(tex_content, definitions, plain_defs):
         (re.compile(r'\\sagestr\{([^}]+)\}'), 'sagestr'),
         (re.compile(r'\\nums\{([^}]+)\}\{[^}]*\}'), 'nums'),
         (re.compile(r'\\qtys\{([^}]+)\}\{[^}]*\}\{[^}]*\}'), 'qtys'),
-        (re.compile(r'\\datail\{([^}]+)\}\{[^}]*\}\{[^}]*\}'), 'datail'),
+        (re.compile(r'\\datail\{([^}]+)\}\{[^}]*\}'), 'datail'),
+        (re.compile(r'\\datailt\{([^}]+)\}\{[^}]*\}\{[^}]*\}'), 'datailt'),
     ]
 
     result_lines = []
