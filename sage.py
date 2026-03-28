@@ -596,11 +596,10 @@ def build_lrg_plot(points_x_list, points_y_list, title, legends, width_multiplie
     colors = ['blue', 'red', 'green', 'orange', 'purple', 'cyan']
 
     # Move \centering before \caption for perfect alignment
-    lt = r"\begin{figure}[h!]\centering\caption{"
-    lt += title
+    lt = r"\begin{figure}[h!]\centering"
 
     # trim axis left/right goes in the tikzpicture options, not the axis options
-    lt += r"}\begin{tikzpicture}\begin{axis}[grid = both, axis x line=bottom,thick,axis line style={-Latex[round]}, axis y line=left,thick,axis line style={-Latex[round]},width="
+    lt += r"\begin{tikzpicture}\begin{axis}[grid = both, axis x line=bottom,thick,axis line style={-Latex[round]}, axis y line=left,thick,axis line style={-Latex[round]},width="
     lt += str(width_multiplier)
     lt += r"\textwidth,height="
     lt += str(height)
@@ -660,7 +659,9 @@ def build_lrg_plot(points_x_list, points_y_list, title, legends, width_multiplie
             lt += r"\addlegendimage{no marks, " + color + r", thick}"
             lt += r"\addlegendentry{\small\:\:$" + slope_str + r"\,x " + intercept_str + "$}"
 
-    lt += r"\end{axis}\end{tikzpicture}\end{figure}"
+    lt += r"\end{axis}\end{tikzpicture}\caption{"
+    lt += title
+    lt += r"}\end{figure}"
     return LatexExpr(lt)
 
 \end{sagesilent}
