@@ -22,6 +22,9 @@ RAT_ANS = True
 _SYM_NAMES = {}
 _SYM_COUNTS = {}
 
+# bool: was in datai mode, int: exponent from data value
+_datai_status = [False, None]
+
 def _set_sym_names(d, counts=None):
     global _SYM_NAMES, _SYM_COUNTS
     _SYM_NAMES = d
@@ -135,6 +138,16 @@ def infinite_decimal(x):
     return d > 1
 
 def _latex_or_number(X, precision, unit=None, error=False, error_value=None):
+    global _datai_status
+    previous_exponent = None
+    post_val = None
+    was_in_datai = False
+    if _datai_status[0] == True:
+        was_in_datai = True
+        previous_exponent = _datai_status[1]
+        _datai_status[0] = False
+        _datai_status[1] = None
+
     if (X.parent() == SR and X.variables()) or (PRECISION_CHECKS == True and X.is_integer() == False and precision == 0) or precision == None:
         return "", r"{\color{red}" + latex(X) + "}", True
 
@@ -174,26 +187,44 @@ def _latex_or_number(X, precision, unit=None, error=False, error_value=None):
                 precision -= abs(floor_X - floor_error_value) - 1
                 if first_digit == 1:
                     precision -= 1
+            pre_val += r"("
         val = f"{X.n():.{-precision}e}"
-        exponent = int(val.split('e')[-1])
+        value, _sep, exponent = val.partition('e')
+        val = value
+        exponent = int(exponent)
+
+        if previous_exponent is not None and exponent != previous_exponent:
+            diff = abs(previous_exponent - exponent)
+            new_val = float(val) / (10**diff)
+            target_precision = (-precision) + diff
+            val = "{:.{prec}f}".format(new_val, prec=target_precision)
+
         if error_value != None and floor_X != exponent and not (val.startswith("1.0") or val.startswith("-1.0")):
-            val = val.replace("1e", "1.0e")
+            val = val.replace("1", "1.0", 1)
+        if error_value != None:
+            _datai_status = [True, exponent]
+        if was_in_datai:
+            post_val = r")\cdot 10^{"
+            post_val += str(previous_exponent)
+            post_val += r"}"
     else:
         val = "{:.{prec}f}".format(X.n(), prec=precision)
-    return pre_val, val, False
+    return pre_val, val, False, post_val
 
 def num(X, precision, color=True, error=False, error_value=None):
-    pre_val, val, bool = _latex_or_number(X, precision, error=error, error_value=error_value)
+    pre_val, val, bool, post_val = _latex_or_number(X, precision, error=error, error_value=error_value)
     if bool:
         return val
     ret = r"{}".format(pre_val)
     if color:
         ret += r"\color{{{}}}".format(NUM_QTY_COLOR)
     ret += r"\num{{{}}}".format(val)
+    if post_val != None:
+        ret += r"{}".format(post_val)
     return ret
 
 def qty(X, precision, unit, color=True):
-    pre_val, val, bool = _latex_or_number(X, precision, unit)
+    pre_val, val, bool, post_val = _latex_or_number(X, precision, unit)
     if bool:
         return val
     ret = r"{}".format(pre_val)
@@ -201,6 +232,8 @@ def qty(X, precision, unit, color=True):
         ret += r"\color{{{}}}".format(NUM_QTY_COLOR)
     ret += r"\qty{{{}}}".format(val)
     ret += r"{{{}}}".format(unit)
+    if post_val != None:
+        ret += r"{}".format(post_val)
     return ret
 
 def svar(name, lname=None):
