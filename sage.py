@@ -38,12 +38,18 @@ def _id_to_sym(val):
                 sage_name, latex_name = entry
             else:
                 sage_name, latex_name = entry, None
-            local_val = frame.f_locals.get(name)
-            if local_val is val:
-                # Vérifie si la variable a encore un "droit" d'être remplacée
+            try:
+                local_val = eval(name, frame.f_globals, frame.f_locals)
+            except:
+                local_val = frame.f_locals.get(name)
+            if local_val is val or local_val == val:
                 if _SYM_COUNTS.get(name, 0) > 0:
                     _SYM_COUNTS[name] -= 1
-                    return SR.var(sage_name, latex_name=latex_name) if latex_name else SR.var(sage_name)
+                    base_name = name.split('[')[0]
+                    if latex_name:
+                        return SR.var(base_name, latex_name=latex_name)
+                    else:
+                        return SR.var(base_name)
         frame = frame.f_back
 
     if val in QQ:

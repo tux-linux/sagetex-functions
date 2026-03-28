@@ -167,11 +167,10 @@ def extract_dexpr_args(call_text):
         'DIV', 'TIMES', 'PLUS', 'MINUS', 'POW', 'NEG',
         'DIFF', 'PARTIAL', 'DERIV',
         'dexpr', 'matdexpr', 'True', 'False', 'None',
-        # Sage constants that must never be treated as variable names
         'e', 'i', 'pi', 'I', 'oo', 'NaN', 'inf',
     }
-    identifiers = re.findall(r'\b([A-Za-z_][A-Za-z0-9_]*)\b', call_text)
-    return [name for name in identifiers if name not in SKIP and not name.startswith('_')]
+    identifiers = re.findall(r'\b([A-Za-z_][A-Za-z0-9_]*(?:\[\d+\])?)', call_text)
+    return [name for name in identifiers if name.split('[')[0] not in SKIP and not name.startswith('_')]
 
 def extract_full_call(lines, start_lineno):
     """
