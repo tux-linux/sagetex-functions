@@ -134,7 +134,7 @@ def infinite_decimal(x):
 
     return d > 1
 
-def _latex_or_number(X, precision, unit=None):
+def _latex_or_number(X, precision, unit=None, error=False, error_value=None):
     if (X.parent() == SR and X.variables()) or (PRECISION_CHECKS == True and X.is_integer() == False and precision == 0) or precision == None:
         return "", r"{\color{red}" + latex(X) + "}", True
 
@@ -155,11 +155,35 @@ def _latex_or_number(X, precision, unit=None):
         else:
             pre_val += "="
 
-    val = "{:.{prec}f}".format(X.n(), prec=precision)
+    if precision < 0:
+        floor_X = None
+        floor_error_value = None
+        if error:
+            if int(str(abs(RR(X))).replace('.', '').lstrip('0')[0]) == 1:
+                precision = -1 # Results in 1 decimal place (:.1e)
+            else:
+                precision = 0  # Results in 0 decimal places (:.0e)
+        if error_value != None:
+            first_digit = int(str(abs(RR(error_value))).replace('.', '').lstrip('0')[0])
+            floor_X = math.floor(math.log10(abs(RR(X))))
+            floor_error_value = math.floor(math.log10(abs(RR(error_value))))
+            if floor_X == floor_error_value:
+                if first_digit != 1:
+                    precision = 0
+            else:
+                precision -= abs(floor_X - floor_error_value) - 1
+                if first_digit == 1:
+                    precision -= 1
+        val = f"{X.n():.{-precision}e}"
+        exponent = int(val.split('e')[-1])
+        if error_value != None and floor_X != exponent and not (val.startswith("1.0") or val.startswith("-1.0")):
+            val = val.replace("1e", "1.0e")
+    else:
+        val = "{:.{prec}f}".format(X.n(), prec=precision)
     return pre_val, val, False
 
-def num(X, precision, color=True):
-    pre_val, val, bool = _latex_or_number(X, precision)
+def num(X, precision, color=True, error=False, error_value=None):
+    pre_val, val, bool = _latex_or_number(X, precision, error=error, error_value=error_value)
     if bool:
         return val
     ret = r"{}".format(pre_val)
