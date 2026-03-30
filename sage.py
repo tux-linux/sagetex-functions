@@ -446,7 +446,7 @@ def _build_product(group, force_no_parens=False):
             if exp_sv == 1/2:
                 result_lt = r"\sqrt{%s}" % base_lt
             else:
-                if _can_add_parens(base_lt, True) or base_lt.startswith(r"\frac{"):
+                if not _is_symbolic(base_sv) and (_can_add_parens(base_lt, True) or base_lt.startswith(r"\frac{")):
                     base_lt = r"\left(%s\right)" % base_lt
                 result_lt = base_lt + "^{" + exp_lt + "}"
 
