@@ -149,7 +149,7 @@ def _latex_or_number(X, precision, unit=None, error=False, error_value=None):
         _datai_status[1] = None
 
     if (X.parent() == SR and X.variables()) or (PRECISION_CHECKS == True and X.is_integer() == False and precision == 0) or precision == None:
-        return "", r"{\color{red}" + latex(X) + "}", True
+        return "", r"{\color{red}" + latex(X) + "}", True, None
 
     pre_val = ""
     if RAT_ANS == True and X.is_integer() == False:
@@ -648,12 +648,12 @@ def extract_equations_matrix_product(LHS, VAR, RHS):
     return [lhs, rhs]
 
 def compute_parallel_resistance(resistors):
-    R = var('R')
-    expr = 1/R == 0
+    R_eq = var('R_eq')
+    expr = 1/R_eq == 0
     for value in resistors:
         expr = expr.lhs() == expr.rhs() + 1/value
 
-    return solve(expr, R)[0].rhs()
+    return solve(expr, R_eq)[0].rhs()
 
 def build_lrg_plot(points_x_list, points_y_list, title, legends, width_multiplier, height, show_slopes=False, origin=False, extend=0.05, xlabel="X-axis", ylabel="Y-axis", max_space_between_ticks=40):
     colors = ['blue', 'red', 'green', 'orange', 'purple', 'cyan']
