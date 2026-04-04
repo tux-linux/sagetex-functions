@@ -53,14 +53,14 @@
 \renewcommand{\cellalign}{cc}
 \newcommand{\fvspacing}{20pt}
 \usepackage{xstring}
-\newcommand{\autofig}[3][scale=1]{% [Options], {Filename}, {Caption}
-    \includegraphics[#1]{#2}%
-    \caption{#3}%
-    % Strip extensions to create the label
-    \StrSubstitute{#2}{.png}{}[\tempname]%
-    \StrSubstitute{\tempname}{.jpg}{}[\tempname]%
-    \StrSubstitute{\tempname}{.pdf}{}[\tempname]%
-    \label{fig:\tempname}%
+\newcommand{\autofig}[3][scale=1]{%
+    \StrSubstitute{#2}{.png}{}[\tempname]
+    \edef\cleanname{\detokenize\expandafter{\tempname}}
+    \pdftooltip{
+        \includegraphics[#1]{#2}
+    }{\cleanname}
+    \caption{#3}
+    \label{fig:\cleanname}
 }
 
 \newif\ifneedscolor
