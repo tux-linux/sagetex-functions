@@ -29,6 +29,7 @@
 \usepackage{comment}
 \usepackage{pgfplots}
 \usepackage{pgfplotstable}
+\usepackage{hyperref}
 \geometry{margin=0.65in}
 
 \newcommand{\units}[1]{\,\unit{#1}}
@@ -50,6 +51,17 @@
 \newcommand{\firstpagefootrule}{\renewcommand{\footrulewidth}{0.4pt}}
 \newcommand{\runningfootrule}{\renewcommand{\footrulewidth}{0.4pt}}
 \renewcommand{\cellalign}{cc}
+\newcommand{\fvspacing}{20pt}
+\usepackage{xstring}
+\newcommand{\autofig}[3][scale=1]{% [Options], {Filename}, {Caption}
+    \includegraphics[#1]{#2}%
+    \caption{#3}%
+    % Strip extensions to create the label
+    \StrSubstitute{#2}{.png}{}[\tempname]%
+    \StrSubstitute{\tempname}{.jpg}{}[\tempname]%
+    \StrSubstitute{\tempname}{.pdf}{}[\tempname]%
+    \label{fig:\tempname}%
+}
 
 \newif\ifneedscolor
 \needscolorfalse
