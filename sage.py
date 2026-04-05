@@ -157,7 +157,7 @@ def _latex_or_number(X, precision, unit=None, error=False, error_value=None):
         pre_val += latex(X)
         pre_val += r"\right]"
         if isinstance(unit, str):
-            pre_val += r"\:\mathrm{"
+            pre_val += r"\,\unit{"
             pre_val += unit
             pre_val += r"}"
 
@@ -726,5 +726,8 @@ def build_lrg_plot(points_x_list, points_y_list, title, legends, width_multiplie
     lt += title
     lt += r"}\end{figure}"
     return LatexExpr(lt)
+
+def tdsym(expr):
+    return LatexExpr(expr.split('=', 1)[0])
 
 \end{sagesilent}

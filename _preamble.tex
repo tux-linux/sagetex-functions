@@ -54,36 +54,38 @@
 \newcommand{\fvspacing}{20pt}
 \usepackage{xstring}
 \newcommand{\autofig}[3][scale=1]{%
-    \StrSubstitute{#2}{.png}{}[\tempname]
-    \edef\cleanname{\detokenize\expandafter{\tempname}}
-    \pdftooltip{
-        \includegraphics[#1]{#2}
-    }{\cleanname}
-    \caption{#3}
-    \label{fig:\cleanname}
+	\StrSubstitute{#2}{.png}{}[\tempname]
+	\edef\cleanname{\detokenize\expandafter{\tempname}}
+	\pdftooltip{
+		\includegraphics[#1]{#2}
+	}{\cleanname}
+	\caption{#3}
+	\label{fig:\cleanname}
 }
 
 \newif\ifneedscolor
 \needscolorfalse
 
-\AddToHook{env/gather*/begin}{\needscolortrue}
-\AddToHook{env/gather*/end}{\needscolorfalse}
+\foreach \env in {gather, gather*, align, align*, equation, equation*} {
+		\AddToHook{env/\env/begin}{\needscolortrue}
+		\AddToHook{env/\env/end}{\needscolorfalse}
+	}
 
 \NewDocumentCommand{\qtys}{m m m}{%
-    \ifneedscolor\sagestr{qty(#1,#2,"#3")}\else\sagestr{qty(#1,#2,"#3",False)}\fi
+	\ifneedscolor\sagestr{qty(#1,#2,"#3")}\else\sagestr{qty(#1,#2,"#3",False)}\fi
 }
 \NewDocumentCommand{\nums}{m m O{None} O{None}}{%
-    \ifneedscolor\sagestr{num(#1,#2,True,#3,#4)}\else\sagestr{num(#1,#2,False,#3,#4)}\fi
+	\ifneedscolor\sagestr{num(#1,#2,True,#3,#4)}\else\sagestr{num(#1,#2,False,#3,#4)}\fi
 }
 
 \newcommand{\datai}[3]{\nums{#1}{#3}[False][#2]\pm\nums{#2}{#3}[True][None]}
 \newcommand{\datail}[2]{\nums{#1[0]}{#2}[False][#1[1]]\pm\nums{#1[1]}{#2}[True][None]}
 \newcommand{\datailt}[3]{%
-  \ifnum#2<0
-    \left[\datail{#1}{#2}\right]\!\units{#3}%
-  \else
-    \left(\datail{#1}{#2}\right)\!\units{#3}%
-  \fi
+	\ifnum#2<0
+		\left[\datail{#1}{#2}\right]\!\units{#3}%
+	\else
+		\left(\datail{#1}{#2}\right)\!\units{#3}%
+	\fi
 }
 \newcommand{\maxl}[1]{#1_\text{max.}}
 \newcommand{\effl}[1]{#1_\text{eff.}}
