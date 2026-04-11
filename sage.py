@@ -675,91 +675,92 @@ def build_lrg_plot(points_x_list, points_y_list, title, legends=True, width_mult
     fmt_xlabel, var_x = process_label(xlabel, x_var)
     fmt_ylabel, var_y = process_label(ylabel, y_var)
 
-    # Normalize show_slopes into a list of booleans
-    if isinstance(show_slopes, list):
-        slope_flags = show_slopes
-    else:
-        slope_flags = [show_slopes] * len(points_x_list)
+    num_curves = len(points_x_list)
+    slope_flags = show_slopes if isinstance(show_slopes, list) else [show_slopes] * num_curves
 
     def get_ext_x(param, idx, x_min, x_max, x_range, is_left):
         val = param[idx] if isinstance(param, list) else param
-        if val is None: val = extend[idx] if isinstance(extend, list) else extend
+        if val is None:
+            val = extend[idx] if isinstance(extend, list) else extend
+        if val == "to_y_axis":
+            return (float(x_min) / float(x_range)) if is_left else (-float(x_max) / float(x_range))
         try: return float(val) if val is not None else 0.05
         except: return 0.05
 
     colors = ['blue', 'red', 'green', 'orange', 'purple', 'cyan']
-    dotted_settings = dotted_extensions if dotted_extensions is not None else [True] * len(points_x_list)
+    dotted_settings = dotted_extensions if dotted_extensions is not None else [True] * num_curves
     pos_settings = "at={(0.98,0.035)}, anchor=south east" if legend_pos == "bottom right" else "at={(0.0175,0.965)}, anchor=north west"
 
-    lt = r"\begin{figure}[h!]\centering"
+    lt = r"\begin{figure}[h!]\centering" + "\n"
     lt += r"\begin{tikzpicture}\begin{axis}[grid = both, axis x line=bottom, thick, axis line style={-Latex[round]}, axis y line=left, thick, axis line style={-Latex[round]}, width="
-    lt += str(width_multiplier) + r"\textwidth, height=" + str(height)
-    lt += r"cm, clip=true,"
+    lt += str(width_multiplier) + r"\textwidth, height=" + str(height) + r"cm, clip=true,"
     if origin: lt += r" xmin=0, ymin=0,"
 
     lt += f"xlabel={{{fmt_xlabel}}}, xlabel style={{yshift=-6.5pt}}, ylabel={{{fmt_ylabel}}}, ylabel near ticks, "
     lt += r"xticklabel style={/pgf/number format/use comma}, yticklabel style={/pgf/number format/use comma}, "
     lt += f"max space between ticks={{{max_space_between_ticks}}}, major grid style={{line width=0.2pt, draw=gray!50}}, minor grid style={{line width=0.1pt, draw=gray!30, dashed}}, minor x tick num=4, minor y tick num=4, tick label style={{font=\\footnotesize}},"
 
-    use_legend = (legends is not False)
-    if use_legend:
+    if legends is not False:
         lt += f" legend style={{{pos_settings}, legend cell align={{left}}, inner xsep=7.5pt, inner ysep=3pt, column sep=2.5pt, nodes={{inner sep=2pt, anchor=west}}}} ]"
     else:
         lt += " ]"
 
     reg_data = []; all_slopes = []; all_intercepts = []
 
-    for idx, (points_x, points_y) in enumerate(zip(points_x_list, points_y_list)):
+    for idx, (px_in, py_in) in enumerate(zip(points_x_list, points_y_list)):
         color = colors[idx % len(colors)]
-        xs = [n(px[0]) for px in points_x]; ys = [n(py[0]) for py in points_y]
+        xs = [float(n(p[0])) for p in px_in]; ys = [float(n(p[0])) for p in py_in]
 
-        a_v, b_v = var('a_v b_v'); x_v = var('x_v')
+        a_v, b_v, x_v = var('a_v b_v x_v')
         fit = find_fit(list(zip(xs, ys)), a_v*x_v + b_v, parameters=[a_v, b_v], variables=[x_v])
-        slope, intercept = fit[0].rhs(), fit[1].rhs()
-        all_slopes.append(slope); all_intercepts.append(intercept)
+        slope, intercept = float(fit[0].rhs()), float(fit[1].rhs())
+        all_slopes.append(QQ(slope)); all_intercepts.append(QQ(intercept))
 
         x_min_d, x_max_d = min(xs), max(xs)
         x_range = max(x_max_d - x_min_d, 1e-9)
-        ext_l, ext_r = get_ext_x(extend_left, idx, x_min_d, x_max_d, x_range, True), get_ext_x(extend_right, idx, x_min_d, x_max_d, x_range, False)
 
-        x_start, x_end = x_min_d - ext_l * x_range, x_max_d + ext_r * x_range
-        y_start, y_end = float(slope) * x_start + float(intercept), float(slope) * x_end + float(intercept)
-        y_min_d, y_max_d = float(slope) * x_min_d + float(intercept), float(slope) * x_max_d + float(intercept)
-        reg_data.append({'x_min': x_min_d, 'y_min': y_min_d, 'x_max': x_max_d, 'y_max': y_max_d, 'slope': slope, 'intercept': intercept})
+        ext_l = get_ext_x(extend_left, idx, x_min_d, x_max_d, x_range, True)
+        ext_r = get_ext_x(extend_right, idx, x_min_d, x_max_d, x_range, False)
+
+        x_start, x_end = float(x_min_d - ext_l * x_range), float(x_max_d + ext_r * x_range)
+        y_start, y_end = slope * x_start + intercept, slope * x_end + intercept
+        y_min_fit, y_max_fit = slope * x_min_d + intercept, slope * x_max_d + intercept
+
+        reg_data.append({'x_min': x_min_d, 'y_min': y_min_fit, 'x_max': x_max_d, 'y_max': y_max_fit, 'slope': slope, 'intercept': intercept})
 
         lt += r"\addplot[only marks, " + color + r", error bars/.cd, y dir=both, y explicit, x dir=both, x explicit] table [row sep=\\, x=X, y=Y, x error=Xerr, y error=Yerr] {" + "\n"
         lt += "X Y Xerr Yerr \\\\\n"
-        for px, py in zip(points_x, points_y):
-            lt += f"{float(n(px[0]))} {float(n(py[0]))} {float(n(px[1]))} {float(n(py[1]))} \\\\\n"
+        for pxi, pyi in zip(px_in, py_in):
+            lt += f"{float(n(pxi[0]))} {float(n(pyi[0]))} {float(n(pxi[1]))} {float(n(pyi[1]))} \\\\\n"
         lt += "};"
 
-        if use_legend:
-            if isinstance(legends, list) and idx < len(legends):
-                entry = str(legends[idx])
-            else:
-                entry = f"${var_y}_{{{idx+1}}}$"
+        if legends is not False:
+            current_legend = legends[idx] if isinstance(legends, list) and idx < len(legends) else None
 
-            # Check the specific flag for this curve
             if idx < len(slope_flags) and slope_flags[idx]:
-                sign = "+" if intercept >= 0 else "-"
                 def fmt_strict_3(val):
                     val = float(val)
                     if val == 0: return r"0,00"
                     p = floor(log10(abs(val)))
                     d = max(0, 2 - p)
                     return f"{val:.{d}f}".replace('.', r',\!')
+                sign = "+" if intercept >= 0 else "-"
+                eq_str = f"${var_y} = {fmt_strict_3(slope)}{var_x} {sign} {fmt_strict_3(abs(intercept))}$"
 
-                s_str = fmt_strict_3(slope)
-                i_str = fmt_strict_3(abs(intercept))
-                entry += f" (${var_y} = {s_str}{var_x} {sign} {i_str}$)"
+                # If Legend is None, show just the Equation. Else show Legend (Equation)
+                if current_legend is None:
+                    entry = eq_str
+                else:
+                    entry = f"{current_legend} ({eq_str})"
+            else:
+                entry = str(current_legend) if current_legend is not None else f"${var_y}_{{{idx+1}}}$"
 
             lt += r"\addlegendentry{\footnotesize " + entry + "}"
 
-        is_dotted = dotted_settings[idx]
-        ext_style = "dotted" if is_dotted else "solid"
-        lt += f"\\addplot [thick, solid, {color}, no marks, forget plot] coordinates {{({x_min_d:.6g},{y_min_d:.6g}) ({x_max_d:.6g},{y_max_d:.6g})}};"
-        lt += f"\\addplot [thick, {ext_style}, {color}, no marks, forget plot] coordinates {{({x_start:.6g},{y_start:.6g}) ({x_min_d:.6g},{y_min_d:.6g})}};"
-        lt += f"\\addplot [thick, {ext_style}, {color}, no marks, forget plot] coordinates {{({x_max_d:.6g},{y_max_d:.6g}) ({x_end:.6g},{y_end:.6g})}};"
+        style = "dotted" if dotted_settings[idx] else "solid"
+        lt += f"\\addplot [thick, solid, {color}, no marks, forget plot] coordinates {{({x_min_d:.6g},{y_min_fit:.6g}) ({x_max_d:.6g},{y_max_fit:.6g})}};"
+        lt += f"\\addplot [thick, {style}, {color}, no marks, forget plot] coordinates {{({x_start:.6g},{y_start:.6g}) ({x_min_d:.6g},{y_min_fit:.6g})}};"
+        lt += f"\\addplot [thick, {style}, {color}, no marks, forget plot] coordinates {{({x_max_d:.6g},{y_max_fit:.6g}) ({x_end:.6g},{y_end:.6g})}};"
 
     if link_curves and len(reg_data) >= 2:
         r1, r2 = reg_data[0], reg_data[1]
