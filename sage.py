@@ -655,76 +655,89 @@ def compute_parallel_resistance(resistors):
 
     return solve(expr, R_eq)[0].rhs()
 
-def build_lrg_plot(points_x_list, points_y_list, title, legends, width_multiplier, height, show_slopes=False, origin=False, extend=0.05, xlabel="X-axis", ylabel="Y-axis", max_space_between_ticks=40):
+def build_lrg_plot(points_x_list, points_y_list, title, legends, width_multiplier, height,
+                   show_slopes=False, origin=False, extend=0.05, extend_left=None, extend_right=None,
+                   xlabel="X-axis", ylabel="Y-axis", max_space_between_ticks=40,
+                   link_curves=False, dotted_extensions=None):
+
+    def get_ext_x(param, idx, x_min, x_max, x_range, is_left):
+        val = param[idx] if isinstance(param, list) else param
+        if val is None:
+            val = extend[idx] if isinstance(extend, list) else extend
+
+        if val in ["to_y_axis"]:
+            return (x_min - 0) / x_range if is_left else (0 - x_max) / x_range
+
+        try:
+            return float(val) if val is not None else 0.05
+        except:
+            return 0.05
+
     colors = ['blue', 'red', 'green', 'orange', 'purple', 'cyan']
+    dotted_settings = dotted_extensions if dotted_extensions is not None else [True] * len(points_x_list)
 
-    # Move \centering before \caption for perfect alignment
     lt = r"\begin{figure}[h!]\centering"
-
-    # trim axis left/right goes in the tikzpicture options, not the axis options
-    lt += r"\begin{tikzpicture}\begin{axis}[grid = both, axis x line=bottom,thick,axis line style={-Latex[round]}, axis y line=left,thick,axis line style={-Latex[round]},width="
-    lt += str(width_multiplier)
-    lt += r"\textwidth,height="
-    lt += str(height)
+    lt += r"\begin{tikzpicture}\begin{axis}[grid = both, axis x line=bottom, thick, axis line style={-Latex[round]}, axis y line=left, thick, axis line style={-Latex[round]}, width="
+    lt += str(width_multiplier) + r"\textwidth, height=" + str(height)
+    lt += r"cm, clip=true,"
 
     if origin:
-        lt += r"cm, xmin=0, ymin=0,"
-    else:
-        lt += r"cm,"
+        lt += r" xmin=0, ymin=0,"
 
+    # Cleaned up the style string to prevent hidden characters
     lt += f"xlabel={{{xlabel}}}, xlabel style={{yshift=-6.5pt}}, ylabel={{{ylabel}}}, ylabel near ticks, /pgf/number format/use comma, /pgf/number format/1000 sep={{\,}}, max space between ticks={{{max_space_between_ticks}}}, major grid style={{line width=0.2pt, draw=gray!50}}, minor grid style={{line width=0.1pt, draw=gray!30, dashed}}, minor x tick num=4, minor y tick num=4, tick label style={{font=\\footnotesize}},"
-    lt += (r" legend style={at={(0.0175,0.965)}, anchor=north west, "
-       r"legend cell align={left}, "
-       r"inner xsep=7.5pt, inner ysep=3pt, column sep=2.5pt,"
-       r"nodes={inner sep=2pt, anchor=west}} ]")
+    lt += r" legend style={at={(0.0175,0.965)}, anchor=north west, legend cell align={left}, inner xsep=7.5pt, inner ysep=3pt, column sep=2.5pt, nodes={inner sep=2pt, anchor=west}} ]"
+
+    reg_data = []
 
     for idx, (points_x, points_y, legend) in enumerate(zip(points_x_list, points_y_list, legends)):
         color = colors[idx % len(colors)]
-        xs = [n(px[0]) for px in points_x]
-        ys = [n(py[0]) for py in points_y]
+        xs = [n(px[0]) for px in points_x]; ys = [n(py[0]) for py in points_y]
 
-        # Regression calculation
-        a, b = var('a b'); x = var('x')
-        fit = find_fit(list(zip(xs, ys)), a*x + b, parameters=[a, b], variables=[x])
+        a_v, b_v = var('a_v b_v'); x_v = var('x_v')
+        fit = find_fit(list(zip(xs, ys)), a_v*x_v + b_v, parameters=[a_v, b_v], variables=[x_v])
         slope, intercept = fit[0].rhs(), fit[1].rhs()
-        slope_str = "{:.4g}".format(float(slope))
-        intercept_str = "{:+.4g}".format(float(intercept))
 
-        # Calculate line boundaries
-        x_min, x_max = min(xs), max(xs)
-        x_range = x_max - x_min
-        x_start = max(0, x_min - extend * x_range) if origin else x_min - extend * x_range
-        x_end = x_max + extend * x_range
-        y_start = float(slope) * x_start + float(intercept)
-        y_end = float(slope) * x_end + float(intercept)
+        x_min_d, x_max_d = min(xs), max(xs)
+        x_range = max(x_max_d - x_min_d, 1e-9)
 
-        # 1. DATA POINTS
-        lt += r"\addplot[only marks, " + color + r", error bars/.cd, y dir=both, y explicit, x dir=both, x explicit] "
-        lt += r"table [row sep=\\, x=X, y=Y, x error=Xerr, y error=Yerr] {" + "\n"
-        lt += r"X Y Xerr Yerr \\" + "\n"
+        ext_l = get_ext_x(extend_left, idx, x_min_d, x_max_d, x_range, True)
+        ext_r = get_ext_x(extend_right, idx, x_min_d, x_max_d, x_range, False)
+
+        x_start, x_end = x_min_d - ext_l * x_range, x_max_d + ext_r * x_range
+        y_start, y_end = float(slope) * x_start + float(intercept), float(slope) * x_end + float(intercept)
+        y_min_d, y_max_d = float(slope) * x_min_d + float(intercept), float(slope) * x_max_d + float(intercept)
+
+        reg_data.append({'x_min': x_min_d, 'y_min': y_min_d, 'x_max': x_max_d, 'y_max': y_max_d, 'slope': slope, 'intercept': intercept})
+
+        # Plot marks - Using raw string and simple spacing to avoid ^^G issues
+        lt += r"\addplot[only marks, " + color + r", error bars/.cd, y dir=both, y explicit, x dir=both, x explicit] table [row sep=\\, x=X, y=Y, x error=Xerr, y error=Yerr] {" + "\n"
+        lt += "X Y Xerr Yerr \\\\\n"
         for px, py in zip(points_x, points_y):
-            lt += f"{n(px[0])} {n(py[0])} {n(px[1])} {n(py[1])} \\\\ \n"
+            lt += f"{float(n(px[0]))} {float(n(py[0]))} {float(n(px[1]))} {float(n(py[1]))} \\\\\n"
         lt += "};"
+        lt += r"\addlegendentry{\footnotesize " + str(legend) + "}"
 
-        # This legend entry now correctly attaches to the marks above
-        lt += r"\addlegendentry{\footnotesize" + legend + "}"
+        # Lines
+        is_dotted = dotted_settings[idx]
+        ext_style = "dotted" if is_dotted else "solid"
 
-        # 2. REGRESSION LINE
-        # We add 'forget plot' so this line doesn't interfere with the next legend entry
-        lt += r"\addplot [thick, solid, " + color + r", no marks, forget plot] coordinates {("
-        lt += f"{x_start:.6g}, {y_start:.6g}) ({x_end:.6g}, {y_end:.6g})"
-        lt += "};"
+        # Solid core
+        lt += f"\\addplot [thick, solid, {color}, no marks, forget plot] coordinates {{({x_min_d:.6g},{y_min_d:.6g}) ({x_max_d:.6g},{y_max_d:.6g})}};"
+        # Extensions
+        lt += f"\\addplot [thick, {ext_style}, {color}, no marks, forget plot] coordinates {{({x_start:.6g},{y_start:.6g}) ({x_min_d:.6g},{y_min_d:.6g})}};"
+        lt += f"\\addplot [thick, {ext_style}, {color}, no marks, forget plot] coordinates {{({x_max_d:.6g},{y_max_d:.6g}) ({x_end:.6g},{y_end:.6g})}};"
 
-        # 3. SLOPE LEGEND (Optional)
-        # If you show slopes, we don't 'forget' this one because we want it in the legend
-        if show_slopes:
-            # We plot an invisible path or a ghost plot to carry the legend if 'forget plot' was used
-            lt += r"\addlegendimage{no marks, " + color + r", thick}"
-            lt += r"\addlegendentry{\small\:\:$" + slope_str + r"\,x " + intercept_str + "$}"
+    # The Bezier Knee
+    if link_curves and len(reg_data) >= 2:
+        r1, r2 = reg_data[0], reg_data[1]
+        m1, b1, m2, b2 = float(r1['slope']), float(r1['intercept']), float(r2['slope']), float(r2['intercept'])
+        if (m1 - m2) != 0:
+            ix = (b2 - b1) / (m1 - m2)
+            iy = m1 * ix + b1
+            lt += f"\\draw[thick, black!60] (axis cs:{r1['x_max']:.6g},{r1['y_max']:.6g}) .. controls (axis cs:{ix:.6g},{iy:.6g}) .. (axis cs:{r2['x_min']:.6g},{r2['y_min']:.6g});"
 
-    lt += r"\end{axis}\end{tikzpicture}\caption{"
-    lt += title
-    lt += r"}\end{figure}"
+    lt += r"\end{axis}\end{tikzpicture}\caption{" + title + r"}\end{figure}"
     return LatexExpr(lt)
 
 def tdsym(expr):
