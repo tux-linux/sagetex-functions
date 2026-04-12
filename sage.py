@@ -664,6 +664,8 @@ def build_lrg_plot(points_x_list, points_y_list, title, legends=True, width_mult
                    x_var=None, y_var=None):
 
     from math import log10, floor
+    from scipy import odr
+    import numpy as np
 
     def process_label(label, override_var):
         if isinstance(label, list) and len(label) >= 2:
@@ -699,7 +701,8 @@ def build_lrg_plot(points_x_list, points_y_list, title, legends=True, width_mult
     if origin: lt += r" xmin=0, ymin=0,"
 
     lt += f"xlabel={{{fmt_xlabel}}}, xlabel style={{yshift=-6.5pt}}, ylabel={{{fmt_ylabel}}}, ylabel near ticks, "
-    lt += r"xticklabel style={/pgf/number format/use comma}, yticklabel style={/pgf/number format/use comma}, "
+    lt += r"xticklabel style={/pgf/number format/.cd, use comma, 1000 sep={}}, "
+    lt += r"yticklabel style={/pgf/number format/.cd, use comma, 1000 sep={}}, "
     lt += f"max space between ticks={{{max_space_between_ticks}}}, major grid style={{line width=0.2pt, draw=gray!50}}, minor grid style={{line width=0.1pt, draw=gray!30, dashed}}, minor x tick num=4, minor y tick num=4, tick label style={{font=\\footnotesize}},"
 
     if legends is not False:
@@ -711,14 +714,28 @@ def build_lrg_plot(points_x_list, points_y_list, title, legends=True, width_mult
 
     for idx, (px_in, py_in) in enumerate(zip(points_x_list, points_y_list)):
         color = colors[idx % len(colors)]
-        xs = [float(n(p[0])) for p in px_in]; ys = [float(n(p[0])) for p in py_in]
 
-        a_v, b_v, x_v = var('a_v b_v x_v')
-        fit = find_fit(list(zip(xs, ys)), a_v*x_v + b_v, parameters=[a_v, b_v], variables=[x_v])
-        slope, intercept = float(fit[0].rhs()), float(fit[1].rhs())
-        all_slopes.append(QQ(slope)); all_intercepts.append(QQ(intercept))
+        # Data preparation
+        xs = np.array([float(n(p[0])) for p in px_in])
+        ys = np.array([float(n(p[0])) for p in py_in])
+        xerrs = np.array([max(float(n(p[1])), 1e-10) for p in px_in])
+        yerrs = np.array([max(float(n(p[1])), 1e-10) for p in py_in])
 
-        x_min_d, x_max_d = min(xs), max(xs)
+        linear_model = odr.Model(lambda beta, x: beta[0] * x + beta[1])
+        data = odr.RealData(xs, ys, sx=xerrs, sy=yerrs)
+        # Initial guess using standard polyfit
+        m_guess = np.polyfit(xs, ys, 1)
+        my_odr = odr.ODR(data, linear_model, beta0=m_guess)
+        output = my_odr.run()
+
+        slope, intercept = output.beta[0], output.beta[1]
+        slope_err, intercept_err = output.sd_beta[0], output.sd_beta[1]
+
+        # Store as [Value, Error] using Sage types for compatibility
+        all_slopes.append([RR(slope), RR(slope_err)])
+        all_intercepts.append([RR(intercept), RR(intercept_err)])
+
+        x_min_d, x_max_d = float(min(xs)), float(max(xs))
         x_range = max(x_max_d - x_min_d, 1e-9)
 
         ext_l = get_ext_x(extend_left, idx, x_min_d, x_max_d, x_range, True)
@@ -738,7 +755,6 @@ def build_lrg_plot(points_x_list, points_y_list, title, legends=True, width_mult
 
         if legends is not False:
             current_legend = legends[idx] if isinstance(legends, list) and idx < len(legends) else None
-
             if idx < len(slope_flags) and slope_flags[idx]:
                 def fmt_strict_3(val):
                     val = float(val)
@@ -749,11 +765,8 @@ def build_lrg_plot(points_x_list, points_y_list, title, legends=True, width_mult
                 sign = "+" if intercept >= 0 else "-"
                 eq_str = f"${var_y} = {fmt_strict_3(slope)}{var_x} {sign} {fmt_strict_3(abs(intercept))}$"
 
-                # If Legend is None, show just the Equation. Else show Legend (Equation)
-                if current_legend is None:
-                    entry = eq_str
-                else:
-                    entry = f"{current_legend} ({eq_str})"
+                if current_legend is None: entry = eq_str
+                else: entry = f"{current_legend} ({eq_str})"
             else:
                 entry = str(current_legend) if current_legend is not None else f"${var_y}_{{{idx+1}}}$"
 
