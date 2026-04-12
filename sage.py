@@ -199,11 +199,13 @@ def _latex_or_number(X, precision, unit=None, error=False, error_value=None):
             target_precision = (-precision) + diff
             val = "{:.{prec}f}".format(new_val, prec=target_precision)
 
-        if error_value != None and floor_X != exponent and not (val.startswith("1.0") or val.startswith("-1.0")):
+        if error_value != None and floor_X != exponent and "." not in val:
             val = val.replace("1", "1.0", 1)
         if error_value != None:
             _datai_status = [True, exponent]
         if was_in_datai:
+            if "." not in val:
+                val = val.replace("1", "1.0", 1)
             post_val = r")\cdot 10^{"
             post_val += str(previous_exponent)
             post_val += r"}"
