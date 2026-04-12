@@ -244,7 +244,7 @@ That is obviously *not* what we wanted. Instead, what about this:
 \end{sagesilent}
 We obtain the following matrix:
 \[
-    G=\sage{M}
+    G=\sage{_M}=\sage{M}
 \]
 ```
 
