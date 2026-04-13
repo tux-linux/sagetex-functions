@@ -142,6 +142,7 @@ def _latex_or_number(X, precision, unit=None, error=False, error_value=None):
     previous_exponent = None
     post_val = None
     was_in_datai = False
+
     if _datai_status[0] == True:
         was_in_datai = True
         previous_exponent = _datai_status[1]
@@ -152,16 +153,11 @@ def _latex_or_number(X, precision, unit=None, error=False, error_value=None):
         return "", r"{\color{red}" + latex(X) + "}", True, None
 
     pre_val = ""
-    if RAT_ANS == True and X.is_integer() == False:
-        pre_val += r"\left["
-        pre_val += latex(X)
-        pre_val += r"\right]"
-        if isinstance(unit, str):
-            pre_val += r"\,\unit{"
-            pre_val += unit
-            pre_val += r"}"
 
-        # Check both: is it an infinite decimal, AND does rounding change the value?
+    if RAT_ANS == True and X.is_integer() == False:
+        pre_val += r"\left[" + latex(X) + r"\right]"
+        if isinstance(unit, str):
+            pre_val += r"\,\unit{" + unit + r"}"
         rounded = RR(("{:.{prec}f}".format(X.n(), prec=precision)))
         if infinite_decimal(X) or rounded != RR(X):
             pre_val += r"\approx"
@@ -169,13 +165,12 @@ def _latex_or_number(X, precision, unit=None, error=False, error_value=None):
             pre_val += "="
 
     if precision < 0:
-        floor_X = None
-        floor_error_value = None
         if error:
             if int(str(abs(RR(X))).replace('.', '').lstrip('0')[0]) == 1:
-                precision = -1 # Results in 1 decimal place (:.1e)
+                precision = -1
             else:
-                precision = 0  # Results in 0 decimal places (:.0e)
+                precision = 0
+
         if error_value != None:
             first_digit = int(str(abs(RR(error_value))).replace('.', '').lstrip('0')[0])
             floor_X = math.floor(math.log10(abs(RR(X))))
@@ -188,6 +183,7 @@ def _latex_or_number(X, precision, unit=None, error=False, error_value=None):
                 if first_digit == 1:
                     precision -= 1
             pre_val += r"("
+
         val = f"{X.n():.{-precision}e}"
         value, _sep, exponent = val.partition('e')
         val = value
@@ -201,16 +197,35 @@ def _latex_or_number(X, precision, unit=None, error=False, error_value=None):
 
         if error_value != None and floor_X != exponent and "." not in val:
             val = val.replace("1", "1.0", 1)
+
         if error_value != None:
             _datai_status = [True, exponent]
+
         if was_in_datai:
             if "." not in val:
                 val = val.replace("1", "1.0", 1)
-            post_val = r")\cdot 10^{"
-            post_val += str(previous_exponent)
-            post_val += r"}"
+            post_val = r")\cdot 10^{" + str(previous_exponent) + r"}"
+
     else:
+        if error_value != None:
+            first_digit = int(str(abs(RR(error_value))).replace('.', '').lstrip('0')[0])
+            floor_error_value = math.floor(math.log10(abs(RR(error_value))))
+            needed_decimals = -floor_error_value
+            if first_digit == 1:
+                needed_decimals += 1
+            precision = needed_decimals
+
         val = "{:.{prec}f}".format(X.n(), prec=precision)
+
+        if error_value != None:
+            _datai_status = [True, floor_error_value]
+
+        if was_in_datai:
+            needed_decimals = -previous_exponent
+            if int(str(abs(RR(X))).replace('.', '').lstrip('0')[0]) == 1:
+                needed_decimals += 1
+            val = "{:.{prec}f}".format(X.n(), prec=needed_decimals)
+
     return pre_val, val, False, post_val
 
 def num(X, precision, color=True, error=False, error_value=None):
