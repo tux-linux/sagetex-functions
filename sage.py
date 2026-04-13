@@ -18,12 +18,14 @@ NUM_QTY_COLOR = "blue"
 
 PRECISION_CHECKS = True
 RAT_ANS = True
+LOW_SN_THRESHOLD = 10 ** (-4)
+HIGH_SN_THRESHOLD = 10
 
 _SYM_NAMES = {}
 _SYM_COUNTS = {}
 
-# bool: was in datai mode, int: exponent from data value
-_datai_status = [False, None]
+# bool: was in datai mode, int/None: exponent from data value, float/None: data value
+_datai_status = [False, None, None]
 
 def _set_sym_names(d, counts=None):
     global _SYM_NAMES, _SYM_COUNTS
@@ -124,6 +126,13 @@ def set_rational_answers(bool):
     RAT_ANS = bool
     return ""
 
+def set_sn_thresholds(low, high):
+    global LOW_SN_THRESHOLD
+    global HIGH_SN_THRESHOLD
+    LOW_SN_THRESHOLD = low
+    HIGH_SN_THRESHOLD = high
+    return ""
+
 def infinite_decimal(x):
     if x not in QQ:
         return True
@@ -140,14 +149,17 @@ def infinite_decimal(x):
 def _latex_or_number(X, precision, unit=None, error=False, error_value=None):
     global _datai_status
     previous_exponent = None
+    data_value = None
     post_val = None
     was_in_datai = False
 
     if _datai_status[0] == True:
         was_in_datai = True
         previous_exponent = _datai_status[1]
+        data_value = _datai_status[2]
         _datai_status[0] = False
         _datai_status[1] = None
+        _datai_status[2] = None
 
     if (X.parent() == SR and X.variables()) or (PRECISION_CHECKS == True and X.is_integer() == False and precision == 0) or precision == None:
         return "", r"{\color{red}" + latex(X) + "}", True, None
@@ -163,6 +175,14 @@ def _latex_or_number(X, precision, unit=None, error=False, error_value=None):
             pre_val += r"\approx"
         else:
             pre_val += "="
+
+    if data_value is not None and (data_value >= HIGH_SN_THRESHOLD or data_value <= LOW_SN_THRESHOLD):
+        precision = -1
+    elif error_value is not None and X is not None and (X >= HIGH_SN_THRESHOLD or X <= LOW_SN_THRESHOLD):
+        precision = -1
+    else:
+        if precision != 0:
+            precision = 1
 
     if precision < 0:
         if error:
@@ -199,7 +219,7 @@ def _latex_or_number(X, precision, unit=None, error=False, error_value=None):
             val = val.replace("1", "1.0", 1)
 
         if error_value != None:
-            _datai_status = [True, exponent]
+            _datai_status = [True, exponent, X]
 
         if was_in_datai:
             if "." not in val:
@@ -218,7 +238,7 @@ def _latex_or_number(X, precision, unit=None, error=False, error_value=None):
         val = "{:.{prec}f}".format(X.n(), prec=precision)
 
         if error_value != None:
-            _datai_status = [True, floor_error_value]
+            _datai_status = [True, floor_error_value, X]
 
         if was_in_datai:
             needed_decimals = -previous_exponent
