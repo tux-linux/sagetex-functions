@@ -69,6 +69,7 @@ fi
 pdflatex -halt-on-error "${TEMP}/${DIR}/${FILE}" || clean
 mkdir -p "${LATEX_TEMP}" && cp "${TEMP}/${DIR}/${FILENAME}.pdf" "${LATEX_TEMP}"
 popd
+rm -rf "${LATEX_TEMP}/last-built"
 mkdir -p "${LATEX_TEMP}/last-built"
 cp -Lr "${TEMP}/${DIR}" "${LATEX_TEMP}/last-built"
 rm -rf "${TEMP}"
