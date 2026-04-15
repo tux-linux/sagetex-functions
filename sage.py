@@ -181,7 +181,7 @@ def _latex_or_number(X, precision, unit=None, error=False, error_value=None):
     elif error_value is not None and X is not None and (X >= HIGH_SN_THRESHOLD or X <= LOW_SN_THRESHOLD):
         precision = -1
     else:
-        if precision != 0:
+        if (error_value is not None or was_in_datai) and precision != 0:
             precision = 1
 
     if precision < 0:
