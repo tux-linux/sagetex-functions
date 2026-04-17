@@ -167,7 +167,10 @@ def _latex_or_number(X, precision, unit=None, error=False, error_value=None):
     pre_val = ""
 
     if RAT_ANS == True and X.is_integer() == False:
-        pre_val += r"\left[" + latex(X) + r"\right]"
+        if unit is not None:
+            pre_val += r"\left[" + latex(X) + r"\right]"
+        else:
+            pre_val += latex(X)
         if isinstance(unit, str):
             pre_val += r"\,\unit{" + unit + r"}"
         rounded = RR(("{:.{prec}f}".format(X.n(), prec=precision)))
