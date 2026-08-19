@@ -57,7 +57,7 @@ if [ ${TOOLTIP_ARG} != 0 ] || [ ${EXPAND_ARG} != 0 ]; then
 	mv "${TEMP}/${DIR}/${FILE}.f" "${TEMP}/${DIR}/${FILE}"
 fi
 
-pdflatex -halt-on-error "${TEMP}/${DIR}/${FILE}" || clean
+pdflatex -shell-escape -halt-on-error "${TEMP}/${DIR}/${FILE}" || clean
 
 [ -e "${TEMP}/${DIR}/${FILENAME}.sagetex.sage" ] && (sage "${TEMP}/${DIR}/${FILENAME}.sagetex.sage" || clean)
 
@@ -66,7 +66,7 @@ if [ -e "${TEMP}/${DIR}/${FILENAME}.sagetex.sout" ]; then
 	mv "${TEMP}/${DIR}/${FILENAME}.sagetex.soutf" "${TEMP}/${DIR}/${FILENAME}.sagetex.sout"
 fi
 
-pdflatex -halt-on-error "${TEMP}/${DIR}/${FILE}" || clean
+pdflatex -shell-escape -halt-on-error "${TEMP}/${DIR}/${FILE}" || clean
 mkdir -p "${LATEX_TEMP}" && cp "${TEMP}/${DIR}/${FILENAME}.pdf" "${LATEX_TEMP}"
 popd
 rm -rf "${LATEX_TEMP}/last-built"
