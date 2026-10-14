@@ -53,7 +53,7 @@
 \newcommand{\prb}[1]{\!\left(#1\right)}
 \newcommand{\brb}[1]{\!\left[#1\right]}
 \newcommand{\vnorm}[1]{\left\lVert#1\right\rVert}
-\newcommand{\sln}{\boxed{\textbf{Solution}}\qquad}
+\newcommand{\sln}{\boxed{\textbf{Solution}}}
 \let\oldforall\forall
 \renewcommand{\forall}{\:\oldforall\:}
 \newcommand{\firstpageheadrule}{\renewcommand{\headrulewidth}{0.4pt}}
@@ -67,21 +67,21 @@
 % Obligatory Gemini credit for this block
 \ExplSyntaxOn
 \newcommand{\autofig}[3][scale=1]{
-    \StrSubstitute{#2}{.png}{}[\tempname]
-    \edef\cleanname{\detokenize\expandafter{\tempname}}
-    \bool_set_false:N \l_tmpa_bool
-    \file_if_exist:nT { .\jobname.tex_eet } { \bool_set_true:N \l_tmpa_bool }
-    \file_if_exist:nT { .\jobname .tex_et } { \bool_set_true:N \l_tmpa_bool }
-    \bool_if:NTF \l_tmpa_bool
-    {
-        \pdftooltip{\includegraphics[#1]{#2}}{\cleanname}
-    }
-    {
-        % No flag found: Regular image
-        \includegraphics[#1]{#2}
-    }
-    \caption{#3.}
-    \label{fig:\cleanname}
+	\StrSubstitute{#2}{.png}{}[\tempname]
+	\edef\cleanname{\detokenize\expandafter{\tempname}}
+	\bool_set_false:N \l_tmpa_bool
+	\file_if_exist:nT { .\jobname.tex_eet } { \bool_set_true:N \l_tmpa_bool }
+	\file_if_exist:nT { .\jobname .tex_et } { \bool_set_true:N \l_tmpa_bool }
+	\bool_if:NTF \l_tmpa_bool
+	{
+		\pdftooltip{\includegraphics[#1]{#2}}{\cleanname}
+	}
+	{
+		% No flag found: Regular image
+		\includegraphics[#1]{#2}
+	}
+	\caption{#3.}
+	\label{fig:\cleanname}
 }
 \ExplSyntaxOff
 
@@ -111,7 +111,13 @@
 }
 \newcommand{\maxl}[1]{#1_\text{max.}}
 \newcommand{\effl}[1]{#1_\text{eff.}}
-\newcommand{\questionenum}[1]{#1\vspace{-1em}\par\noindent\rule{\linewidth}{0.4pt}\par\vspace{-.25em}\sln}
+\newcommand{\questionenum}[1]{%
+	#1\setlength{\parskip}{0pt}
+	\par\nobreak
+	\noindent\rule{\linewidth}{0.4pt}%
+	\par\nobreak
+	\noindent\sln\quad%
+}
 \newcommand{\question}[1]{\questionenum{#1}}
 \newcommand{\sfig}[2][1]{\begin{figure}[h!]\centering\linespread{1}\scalebox{#1}{#2}\end{figure}}
 \newcommand{\parallelsum}{\mathbin{\!/\mkern-5mu/\!}}
