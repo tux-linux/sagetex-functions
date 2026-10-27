@@ -58,22 +58,23 @@ if [ ${TOOLTIP_ARG} != 0 ] || [ ${EXPAND_ARG} != 0 ]; then
 fi
 
 lualatex -shell-escape -halt-on-error "${TEMP}/${DIR}/${FILE}" || clean
+if [ "${SINGLE}" != 1 ]; then
+	RAN_BIBTEX=0
+	if [ -e "${TEMP}/${DIR}/${FILENAME}.aux" ]; then
+		bibtex "${FILENAME}" || true
+		RAN_BIBTEX=1
+	fi
 
-RAN_BIBTEX=0
-if [ -e "${TEMP}/${DIR}/${FILENAME}.aux" ]; then
-	bibtex "${FILENAME}" || true
-	RAN_BIBTEX=1
+	[ -e "${TEMP}/${DIR}/${FILENAME}.sagetex.sage" ] && (sage "${TEMP}/${DIR}/${FILENAME}.sagetex.sage" || clean)
+
+	if [ -e "${TEMP}/${DIR}/${FILENAME}.sagetex.sout" ]; then
+		python3 "${SCRIPT_DIR}/sagenum.py" "${TEMP}/${DIR}/${FILENAME}.sagetex.sout" > "${TEMP}/${DIR}/${FILENAME}.sagetex.soutf"
+		mv "${TEMP}/${DIR}/${FILENAME}.sagetex.soutf" "${TEMP}/${DIR}/${FILENAME}.sagetex.sout"
+	fi
+
+	lualatex -shell-escape -halt-on-error "${TEMP}/${DIR}/${FILE}" || clean
+	[ ${RAN_BIBTEX} == 1 ] && (lualatex -shell-escape -halt-on-error "${TEMP}/${DIR}/${FILE}" || clean)
 fi
-
-[ -e "${TEMP}/${DIR}/${FILENAME}.sagetex.sage" ] && (sage "${TEMP}/${DIR}/${FILENAME}.sagetex.sage" || clean)
-
-if [ -e "${TEMP}/${DIR}/${FILENAME}.sagetex.sout" ]; then
-	python3 "${SCRIPT_DIR}/sagenum.py" "${TEMP}/${DIR}/${FILENAME}.sagetex.sout" > "${TEMP}/${DIR}/${FILENAME}.sagetex.soutf"
-	mv "${TEMP}/${DIR}/${FILENAME}.sagetex.soutf" "${TEMP}/${DIR}/${FILENAME}.sagetex.sout"
-fi
-
-lualatex -shell-escape -halt-on-error "${TEMP}/${DIR}/${FILE}" || clean
-[ ${RAN_BIBTEX} == 1 ] && (lualatex -shell-escape -halt-on-error "${TEMP}/${DIR}/${FILE}" || clean)
 mkdir -p "${LATEX_TEMP}" && cp "${TEMP}/${DIR}/${FILENAME}.pdf" "${LATEX_TEMP}"
 popd
 rm -rf "${LATEX_TEMP}/last-built"
