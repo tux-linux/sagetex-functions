@@ -26,7 +26,7 @@ for pid in $(ps -ax | grep sage.sh | grep -v grep | awk '{ print $1 }'); do
 	fi
 done
 
-killall pdflatex
+killall lualatex
 
 cp -Lrv "${DIRR}" "${TEMP}"
 pushd "${TEMP}/${DIR}"
@@ -57,7 +57,13 @@ if [ ${TOOLTIP_ARG} != 0 ] || [ ${EXPAND_ARG} != 0 ]; then
 	mv "${TEMP}/${DIR}/${FILE}.f" "${TEMP}/${DIR}/${FILE}"
 fi
 
-pdflatex -shell-escape -halt-on-error "${TEMP}/${DIR}/${FILE}" || clean
+lualatex -shell-escape -halt-on-error "${TEMP}/${DIR}/${FILE}" || clean
+
+RAN_BIBTEX=0
+if [ -e "${TEMP}/${DIR}/${FILENAME}.aux" ]; then
+	bibtex "${FILENAME}" || true
+	RAN_BIBTEX=1
+fi
 
 [ -e "${TEMP}/${DIR}/${FILENAME}.sagetex.sage" ] && (sage "${TEMP}/${DIR}/${FILENAME}.sagetex.sage" || clean)
 
@@ -66,7 +72,8 @@ if [ -e "${TEMP}/${DIR}/${FILENAME}.sagetex.sout" ]; then
 	mv "${TEMP}/${DIR}/${FILENAME}.sagetex.soutf" "${TEMP}/${DIR}/${FILENAME}.sagetex.sout"
 fi
 
-pdflatex -shell-escape -halt-on-error "${TEMP}/${DIR}/${FILE}" || clean
+lualatex -shell-escape -halt-on-error "${TEMP}/${DIR}/${FILE}" || clean
+[ ${RAN_BIBTEX} == 1 ] && (lualatex -shell-escape -halt-on-error "${TEMP}/${DIR}/${FILE}" || clean)
 mkdir -p "${LATEX_TEMP}" && cp "${TEMP}/${DIR}/${FILENAME}.pdf" "${LATEX_TEMP}"
 popd
 rm -rf "${LATEX_TEMP}/last-built"
