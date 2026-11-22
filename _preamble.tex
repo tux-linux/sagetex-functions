@@ -114,14 +114,26 @@
 \newcommand{\maxl}[1]{#1_\text{max.}}
 \newcommand{\effl}[1]{#1_\text{eff.}}
 \DeclareMathVersion{myques}
+\DeclareMathSymbol{.}{\mathord}{operators}{`.}
+\DeclareMathSymbol{,}{\mathpunct}{operators}{`,}
+
 \SetSymbolFont{operators}{myques}{OT1}{cmss}{m}{n}
 \SetSymbolFont{letters}  {myques}{OT1}{cmss}{m}{it}
 \SetSymbolFont{symbols}  {myques}{OMS}{cmsy}{m}{n}
 \SetMathAlphabet{\mathsf}{myques}{OT1}{cmss}{m}{n}
 \SetMathAlphabet{\mathbf}{myques}{OT1}{cmss}{bx}{n}
+\SetMathAlphabet{\mathrm}{myques}{OT1}{cmss}{m}{n}
+
+% 1. Declare CM integral symbol in the preamble
+\DeclareSymbolFont{CMlargesymbols}{OMX}{cmex}{m}{n}
+\DeclareMathSymbol{\CMintop}{\mathop}{CMlargesymbols}{"52}
+
 \newcommand{\questionenum}[1]{%
 	{\sffamily
 		\mathversion{myques}%
+		% 2. Save normal \intop and switch to \CMintop for the question
+		\let\origintop\intop
+		\let\intop\CMintop
 		\sisetup{
 			mode = match,
 			propagate-math-font = true,
@@ -132,7 +144,8 @@
 		\par\nobreak
 		\noindent\rule{\linewidth}{0.4pt}%
 		\par\nobreak
-		\noindent{\normalfont\mathversion{normal}\sln}\quad%
+		% 3. Restore normal \intop for \sln
+		\noindent{\normalfont\mathversion{normal}\let\intop\origintop\sln}\quad%
 	}%
 }
 \newcommand{\question}[1]{\questionenum{#1}}
