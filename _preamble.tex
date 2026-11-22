@@ -121,21 +121,103 @@
 \SetMathAlphabet{\mathbf}{myques}{OT1}{cmss}{bx}{n}
 \newcommand{\questionenum}[1]{%
 	{\sffamily
-	\mathversion{myques}%
-	\sisetup{
-		mode = match,
-		propagate-math-font = true,
-		reset-math-version = false,
-		output-decimal-marker = {\textsf{,}}
-	}%
-	#1\setlength{\parskip}{0pt}%
-	\par\nobreak
-	\noindent\rule{\linewidth}{0.4pt}%
-	\par\nobreak
-	\noindent{\normalfont\mathversion{normal}\sln}\quad%
+		\mathversion{myques}%
+		\sisetup{
+			mode = match,
+			propagate-math-font = true,
+			reset-math-version = false,
+			output-decimal-marker = {\textsf{,}}
+		}%
+		#1\setlength{\parskip}{0pt}%
+		\par\nobreak
+		\noindent\rule{\linewidth}{0.4pt}%
+		\par\nobreak
+		\noindent{\normalfont\mathversion{normal}\sln}\quad%
 	}%
 }
 \newcommand{\question}[1]{\questionenum{#1}}
+\makeatletter
+\@ifpackageloaded{MinionPro}{%
+	% 1. Font encodings & symbol fonts from newtx
+	\DeclareFontEncoding{LMS}{}{}%
+	\DeclareFontSubstitution{LMS}{ntxsy}{m}{n}%
+
+	\DeclareSymbolFont{NTXsymbols}{LMS}{ntxsy}{m}{n}%
+	\SetSymbolFont{NTXsymbols}{bold}{LMS}{ntxsy}{b}{n}%
+
+	\DeclareSymbolFont{NTXletters}{OML}{ntxmi}{m}{it}%
+	\SetSymbolFont{NTXletters}{bold}{OML}{ntxmi}{b}{it}%
+
+	\DeclareSymbolFont{NTXoperators}{OT1}{ntxtlf}{m}{n}%
+	\SetSymbolFont{NTXoperators}{bold}{OT1}{ntxtlf}{b}{n}%
+
+	% Scaling helper for math relations (default 0.9)
+	\newcommand{\NTXscale}[2][0.9]{%
+		\mathrel{%
+			\mathchoice
+			{\scalebox{#1}{$\displaystyle#2$}}%
+			{\scalebox{#1}{$\textstyle#2$}}%
+			{\scalebox{#1}{$\scriptstyle#2$}}%
+			{\scalebox{#1}{$\scriptscriptstyle#2$}}%
+		}%
+	}%
+
+	% 2. Basic comparisons: =, <, >
+	\DeclareMathSymbol{\NTXeq}{\mathrel}{NTXoperators}{"3D}%
+	\DeclareMathSymbol{=}{\mathrel}{NTXoperators}{"3D}%
+
+	\DeclareMathSymbol{\NTXlt}{\mathrel}{NTXletters}{"3C}%
+	\DeclareMathSymbol{<}{\mathrel}{NTXletters}{"3C}%
+
+	\DeclareMathSymbol{\NTXgt}{\mathrel}{NTXletters}{"3E}%
+	\DeclareMathSymbol{>}{\mathrel}{NTXletters}{"3E}%
+
+	% 3. Inequality symbols: \neq/\ne, \le/\leq, \ge/\geq
+	\DeclareMathSymbol{\NTXleq}{\mathrel}{NTXsymbols}{"14}%
+	\DeclareMathSymbol{\NTXgeq}{\mathrel}{NTXsymbols}{"15}%
+
+	\newcommand{\@scaledneq@glyph}[2]{%
+		\scalebox{#1}{$#2\mathrel{\ooalign{\hfil$#2\NTXeq$\hfil\cr\hfil$#2/$\hfil}}$}%
+	}%
+	\newcommand{\scaledneq}[1][0.9]{%
+		\mathrel{%
+			\mathchoice
+			{\@scaledneq@glyph{#1}{\displaystyle}}%
+			{\@scaledneq@glyph{#1}{\textstyle}}%
+			{\@scaledneq@glyph{#1}{\scriptstyle}}%
+			{\@scaledneq@glyph{#1}{\scriptscriptstyle}}%
+		}%
+	}%
+
+	% 4. Equivalence & set relations from NTXsymbols (LMS)
+	\DeclareMathSymbol{\NTXapprox}{\mathrel}{NTXsymbols}{"19}%
+	\DeclareMathSymbol{\NTXsimeq}{\mathrel}{NTXsymbols}{"27}%
+	\DeclareMathSymbol{\NTXsim}{\mathrel}{NTXsymbols}{"18}%
+	\DeclareMathSymbol{\NTXequiv}{\mathrel}{NTXsymbols}{"11}%
+	\DeclareMathSymbol{\NTXsubset}{\mathrel}{NTXsymbols}{"1A}%
+	\DeclareMathSymbol{\NTXsupset}{\mathrel}{NTXsymbols}{"1B}%
+	\DeclareMathSymbol{\NTXsubseteq}{\mathrel}{NTXsymbols}{"12}%
+	\DeclareMathSymbol{\NTXsupseteq}{\mathrel}{NTXsymbols}{"13}%
+
+	% 5. Apply replacements at \AtBeginDocument so MinionPro/MnSymbol/amsmath don't clobber them
+	\AtBeginDocument{%
+		\renewcommand{\approx}{\NTXscale{\NTXapprox}}%
+		\renewcommand{\simeq}{\NTXscale{\NTXsimeq}}%
+		\renewcommand{\sim}{\NTXscale{\NTXsim}}%
+		\renewcommand{\equiv}{\NTXscale{\NTXequiv}}%
+		\renewcommand{\subset}{\NTXscale{\NTXsubset}}%
+		\renewcommand{\supset}{\NTXscale{\NTXsupset}}%
+		\renewcommand{\subseteq}{\NTXscale{\NTXsubseteq}}%
+		\renewcommand{\supseteq}{\NTXscale{\NTXsupseteq}}%
+		\renewcommand{\le}{\NTXscale{\NTXleq}}%
+		\renewcommand{\leq}{\NTXscale{\NTXleq}}%
+		\renewcommand{\ge}{\NTXscale{\NTXgeq}}%
+		\renewcommand{\geq}{\NTXscale{\NTXgeq}}%
+		\renewcommand{\neq}{\scaledneq}%
+		\renewcommand{\ne}{\scaledneq}%
+	}%
+}{}
+\makeatother
 \newcommand{\sfig}[2][1]{\begin{figure}[h!]\centering\linespread{1}\scalebox{#1}{#2}\end{figure}}
 \newcommand{\parallelsum}{\mathbin{\!/\mkern-5mu/\!}}
 \newcommand{\invs}{s^{-1}}
@@ -163,5 +245,5 @@
 \makeatother
 
 \pgfplotsset{
-    filter discard warning=false
+	filter discard warning=false
 }
