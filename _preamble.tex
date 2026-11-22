@@ -17,7 +17,7 @@
 \usepackage{enumitem}
 \usepackage[french]{babel}
 \usepackage[french]{datetime2}
-\usepackage{amssymb}
+\DeclareMathAlphabet{\mathbb}{U}{msb}{m}{n}
 \usepackage{mathtools}
 \usepackage{sagetex}
 \usepackage[labelfont=bf,textfont=md,margin=1cm]{caption}
@@ -113,12 +113,27 @@
 }
 \newcommand{\maxl}[1]{#1_\text{max.}}
 \newcommand{\effl}[1]{#1_\text{eff.}}
+\DeclareMathVersion{myques}
+\SetSymbolFont{operators}{myques}{OT1}{cmss}{m}{n}
+\SetSymbolFont{letters}  {myques}{OT1}{cmss}{m}{it}
+\SetSymbolFont{symbols}  {myques}{OMS}{cmsy}{m}{n}
+\SetMathAlphabet{\mathsf}{myques}{OT1}{cmss}{m}{n}
+\SetMathAlphabet{\mathbf}{myques}{OT1}{cmss}{bx}{n}
 \newcommand{\questionenum}[1]{%
-	#1\setlength{\parskip}{0pt}
+	{\sffamily
+	\mathversion{myques}%
+	\sisetup{
+		mode = match,
+		propagate-math-font = true,
+		reset-math-version = false,
+		output-decimal-marker = {\textsf{,}}
+	}%
+	#1\setlength{\parskip}{0pt}%
 	\par\nobreak
 	\noindent\rule{\linewidth}{0.4pt}%
 	\par\nobreak
-	\noindent\sln\quad%
+	\noindent{\normalfont\mathversion{normal}\sln}\quad%
+	}%
 }
 \newcommand{\question}[1]{\questionenum{#1}}
 \newcommand{\sfig}[2][1]{\begin{figure}[h!]\centering\linespread{1}\scalebox{#1}{#2}\end{figure}}
