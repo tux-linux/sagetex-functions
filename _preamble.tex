@@ -113,17 +113,39 @@
 }
 \newcommand{\maxl}[1]{#1_\text{max.}}
 \newcommand{\effl}[1]{#1_\text{eff.}}
-\DeclareMathVersion{myques}
-\DeclareMathSymbol{.}{\mathord}{operators}{`.}
-\DeclareMathSymbol{,}{\mathpunct}{operators}{`,}
 
+\DeclareMathVersion{myques}
 \SetSymbolFont{operators}{myques}{OT1}{cmss}{m}{n}
 \SetSymbolFont{letters}  {myques}{OT1}{cmss}{m}{it}
 \SetSymbolFont{symbols}  {myques}{OMS}{cmsy}{m}{n}
 \SetMathAlphabet{\mathsf}{myques}{OT1}{cmss}{m}{n}
 \SetMathAlphabet{\mathbf}{myques}{OT1}{cmss}{bx}{n}
 \SetMathAlphabet{\mathrm}{myques}{OT1}{cmss}{m}{n}
-
+\DeclareSymbolFont{sfgreek}{OML}{ntxsfmi}{m}{it}
+\DeclareMathSymbol{\sfalpha}{\mathord}{sfgreek}{"0B}
+\DeclareMathSymbol{\sfbeta}{\mathord}{sfgreek}{"0C}
+\DeclareMathSymbol{\sfgamma}{\mathord}{sfgreek}{"0D}
+\DeclareMathSymbol{\sfdelta}{\mathord}{sfgreek}{"0E}
+\DeclareMathSymbol{\sfepsilon}{\mathord}{sfgreek}{"0F}
+\DeclareMathSymbol{\sftheta}{\mathord}{sfgreek}{"12}
+\DeclareMathSymbol{\sflambda}{\mathord}{sfgreek}{"15}
+\DeclareMathSymbol{\sfmu}{\mathord}{sfgreek}{"16}
+\DeclareMathSymbol{\sfpi}{\mathord}{sfgreek}{"19}
+\DeclareMathSymbol{\sfrho}{\mathord}{sfgreek}{"1A}
+\DeclareMathSymbol{\sfsigma}{\mathord}{sfgreek}{"1B}
+\DeclareMathSymbol{\sfphi}{\mathord}{sfgreek}{"1E}
+\DeclareMathSymbol{\sfomega}{\mathord}{sfgreek}{"21}
+\DeclareMathSymbol{\sfGamma}{\mathord}{sfgreek}{"00}
+\DeclareMathSymbol{\sfDelta}{\mathord}{sfgreek}{"01}
+\DeclareMathSymbol{\sfTheta}{\mathord}{sfgreek}{"02}
+\DeclareMathSymbol{\sfLambda}{\mathord}{sfgreek}{"03}
+\DeclareMathSymbol{\sfXi}{\mathord}{sfgreek}{"04}
+\DeclareMathSymbol{\sfPi}{\mathord}{sfgreek}{"05}
+\DeclareMathSymbol{\sfSigma}{\mathord}{sfgreek}{"06}
+\DeclareMathSymbol{\sfUpsilon}{\mathord}{sfgreek}{"07}
+\DeclareMathSymbol{\sfPhi}{\mathord}{sfgreek}{"08}
+\DeclareMathSymbol{\sfPsi}{\mathord}{sfgreek}{"09}
+\DeclareMathSymbol{\sfOmega}{\mathord}{sfgreek}{"0A}
 % 1. Declare CM integral symbol in the preamble
 \DeclareSymbolFont{CMlargesymbols}{OMX}{cmex}{m}{n}
 \DeclareMathSymbol{\CMintop}{\mathop}{CMlargesymbols}{"52}
@@ -131,6 +153,16 @@
 \newcommand{\questionenum}[1]{%
 	{\sffamily
 		\mathversion{myques}%
+		\mathcode`.="002E\relax
+		\mathcode`,="602C\relax
+		\let\alpha\sfalpha \let\beta\sfbeta \let\gamma\sfgamma
+		\let\delta\sfdelta \let\epsilon\sfepsilon \let\theta\sftheta
+		\let\lambda\sflambda \let\mu\sfmu \let\pi\sfpi
+		\let\rho\sfrho \let\sigma\sfsigma \let\phi\sfphi
+		\let\omega\sfomega \let\Gamma\sfGamma \let\Delta\sfDelta \let\Theta\sfTheta
+		\let\Lambda\sfLambda \let\Xi\sfXi \let\Pi\sfPi
+		\let\Sigma\sfSigma \let\Upsilon\sfUpsilon \let\Phi\sfPhi
+		\let\Psi\sfPsi \let\Omega\sfOmega
 		% 2. Save normal \intop and switch to \CMintop for the question
 		\let\origintop\intop
 		\let\intop\CMintop
@@ -231,6 +263,7 @@
 	}%
 }{}
 \makeatother
+
 \newcommand{\sfig}[2][1]{\begin{figure}[h!]\centering\linespread{1}\scalebox{#1}{#2}\end{figure}}
 \newcommand{\parallelsum}{\mathbin{\!/\mkern-5mu/\!}}
 \newcommand{\invs}{s^{-1}}
